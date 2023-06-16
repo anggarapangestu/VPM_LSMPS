@@ -23,16 +23,8 @@
 #include "../neighbor/neighbor.hpp"
 #endif
 
-#ifndef INCLUDED_REMESHING
-#include "../remeshing/base_remeshing.hpp"
-#endif
-
-// #ifndef INCLUDED_FORTRAN_UTILS
-// #include "../Fortran/Utils/FortranUtils.hpp"
-// #endif
-
 #ifndef FMM_2D_PACKAGE
-#include "fmm2D.hpp"
+#include "../FMM2D/fmm2D.hpp"
 #endif
 
 class LSMPSa;
@@ -47,7 +39,7 @@ private:
 	// -- creating instance
 	velocity_biot_savart biot_savart;
 	neighbor d_neighbor;			// linked_list, direct_find
-	base_remeshing _base_remeshing; // inter-particle searching
+	// base_remeshing _base_remeshing; // inter-particle searching
 	LSMPSb _lsmpsb;
 	treeCell treeData;				// The basis of tree data of poisson solver
 

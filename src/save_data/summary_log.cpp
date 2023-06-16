@@ -1,16 +1,5 @@
 #include "data_saving.hpp"
 
-save_data::save_data()
-{
-	// ---initializing internal variables inside 'save_data' class
-	// into their respective size and/or value
-}
-
-save_data::~save_data()
-{
-	// ---deallocating memory from internal variables
-}
-
 void save_data::summary_log(){
 	// Simulation Log Initial Parameter Summary Data
 	std::cout << "#=================================================#\n";
@@ -27,7 +16,7 @@ void save_data::summary_log(){
 	printf("Maximum resolution level              :        %d \n", Pars::max_level);
 	printf("Core size                             : %8.4f m\n", Pars::sigma);
 	printf("Time step                             : %8.4f s\n", Pars::dt);
-	printf("Total simulation time                 : %8.2f s\n", Pars::simulation_time);
+	printf("Total simulation time                 : %8.2f s\n", Pars::sim_time);
 	printf("Total iteration step                  : %8d\n", Pars::nt);
 	printf("+-------------------------------------------------+\n");
 	
@@ -41,12 +30,16 @@ void save_data::summary_log(){
 
 	// Additional calculation data
 	printf("\n+---------------- Additional Data ----------------+\n");
-	printf("Courant number (C)                  : %12f \n", Pars::Courant);
-	printf("Diffusion number (Phi)              : %12f \n", Pars::Diffusion);
+	printf("Courant number (C < 1.0)            : %12f \n", Pars::Courant);
+	printf("Diffusion number (Phi < 0.5)        : %12f \n", Pars::Diffusion);
+	printf("Stability Criteria (Re_h < 1.0)     : %12f \n", 100 * Pars::sigma*Pars::sigma/Pars::NU);
 	printf("Turbulent scaling                   : %12f \n", std::ceil(1.0e0 / Pars::Courant));
-	printf("Maximum time step (Phi criteria)    : %12f \n", 0.25*Pars::sigma*Pars::sigma/Pars::NU);
+	printf("Max time step (Re_h criteria)       : %12f \n", 0.25*Pars::sigma*Pars::sigma/Pars::NU);
 	printf("+-------------------------------------------------+\n");
+	return;
+}
 
+void save_data::save_summary_log(Particle& par){
 	// Cancel the saving procedure if flag is closed
 	if (Pars::flag_save_parameter == false){return;}
 	
@@ -79,25 +72,28 @@ void save_data::summary_log(){
 		 << "Core size                               : "; data.width(6); data << std::right << Pars::sigma << " m\n"
 		 << "Time step                               : "; data.width(6); data << std::right << Pars::dt << " s\n";
 	data << std::fixed << std::setprecision(2)
-		 << "Total simulation time                   : "; data.width(6); data << std::right << Pars::simulation_time << " s\n"
+		 << "Total simulation time                   : "; data.width(6); data << std::right << Pars::sim_time << " s\n"
 		 << "Total iteration step                    : "; data.width(6); data << std::right << Pars::nt << " \n"
 		 << "+-------------------------------------------------+\n\n";
 
 	data << "+----------- Simulation Parameter Data -----------+\n"
-	     << "Domain x length                       : "; data.width(8); data << std::right << Pars::lxdom << " m\n"
-		 << "Domain y length                       : "; data.width(8); data << std::right << Pars::lydom << " m\n"
-		 << "Origin gap length                     : "; data.width(8); data << std::right << Pars::xdom  << " m\n"
-		 << "Reference length (D)                  : "; data.width(8); data << std::right << Pars::Df    << " m\n"
-		 << "Plate_thick                           : "; data.width(8); data << std::right << Pars::Df*Pars::H_star   << " m\n";
+	     << "Domain x length                    :"; data.width(12); data << std::right << Pars::lxdom << " m\n"
+		 << "Domain y length                    :"; data.width(12); data << std::right << Pars::lydom << " m\n"
+		 << "Origin gap length                  :"; data.width(12); data << std::right << Pars::xdom  << " m\n"
+		 << "Reference length (D)               :"; data.width(12); data << std::right << Pars::Df    << " m\n"
+		 << "Plate_thick                        :"; data.width(12); data << std::right << Pars::Df*Pars::H_star   << " m\n";
 	data << std::fixed << std::setprecision(4)
-		 << "Courant number (C)                    : "; data.width(8); data << std::right << Pars::Courant << "\n"
-		 << "Diffusion number (Phi)                : "; data.width(8); data << std::right << Pars::Diffusion << "\n"
-		 << "Turbulent scaling                     : "; data.width(8); data << std::right << std::ceil(1.0e0 / Pars::Courant) << "\n"
-		 << "Maximum time step (Phi criteria)      : "; data.width(8); data << std::right << 0.25*Pars::sigma*Pars::sigma/Pars::NU << " s\n"
+		 << "Courant number (C < 1.0)           :"; data.width(12); data << std::right << Pars::Courant << "\n"
+		 << "Diffusion number (Phi < 0.5)       :"; data.width(12); data << std::right << Pars::Diffusion << "\n"
+		 << "Stability Criteria (Re_h < 1.0)    :"; data.width(12); data << std::right << 100 * Pars::sigma*Pars::sigma/Pars::NU << "\n"
+		 << "Turbulent scaling                  :"; data.width(12); data << std::right << std::ceil(1.0e0 / Pars::Courant) << "\n"
+		 << "Maximum time step (Re_h criteria)  :"; data.width(12); data << std::right << 0.25*Pars::sigma*Pars::sigma/Pars::NU << " s\n"
 		 << "+-------------------------------------------------+\n\n";
-	
-	data << std::setprecision(-1);
+	data << "Number of initialized particle     :"; data.width(12);data << std::right << par.num << "\n";
+
+	data << std::fixed << std::setprecision(-1);
 	
 	// End of writting simulation setting
 	data.close();
+	return;
 }

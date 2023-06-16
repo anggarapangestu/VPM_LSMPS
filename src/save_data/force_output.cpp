@@ -72,7 +72,7 @@ void save_data::output(int it, Particle &p, Body &b, double &cum_time)
 	}
 
 	// TODO: Saving common data and extra data
-	if ((it == 0) || ((it % Pars::nt_sf) == 0) || (it == (Pars::simulation_time/Pars::dt)-1)|| (cum_time >= Pars::comtime_sf) || (Pars::opt_extra_data == 3))
+	if ((it == 0) || ((it % Pars::nt_sf) == 0) || (it == (Pars::sim_time/Pars::dt)-1)|| (cum_time >= Pars::comtime_sf) || (Pars::opt_extra_data == 3))
 	{
 		// defining output variables
 		std::ofstream ofs;
@@ -215,7 +215,7 @@ void base_save_data::force_pen(int it, Particle p, double x_loc[2])
 	// Using Explicit scheme, Rasmussen 2011
 	// lambda = 1.0e0/dt; // for Explicit scheme, Rasmussen 2011
 	// If the solid body is considered rigid, all of uSi and vSi are the same. 
-	if(Pars::iterative == 1)
+	if(Pars::opt_pen_iter == 1)
 	{
 		for (int i = 0; i < nPi; i++)
 		{
@@ -251,7 +251,7 @@ void base_save_data::force_pen(int it, Particle p, double x_loc[2])
 		C_m_pen = Moment_pen / (0.5 * Pars::RHO * std::pow(std::abs(Pars::U_inf), 2) * Pars::lx * Pars::lx); // !!kalau airfoil harus diubah jadi CHORD lx nya
 	}
 
-	if (Pars::iterative == 2){
+	if (Pars::opt_pen_iter == 2){
 		for (int i = 0; i < nPi; i++)
 		{
 			// Fluid to solid "+", alpha == 2

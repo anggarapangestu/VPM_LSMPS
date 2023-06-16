@@ -44,13 +44,13 @@ void neighbor::neigbor_search(Particle& parEval){
     if (Pars::opt_neighbor == 0)
     {
         printf("<+> Type 0: Direct neighbor search\n");
-        parEval.neighbor = this->direct_find(parEval.num, parEval.s, parEval.x, parEval.y, Pars::r_scale);
+        parEval.neighbor = this->direct_find(parEval.num, parEval.s, parEval.x, parEval.y, Pars::r_sup);
     }
     // --- Linked list
     else if (Pars::opt_neighbor == 1)
     {
         printf("<+> Type 1: Link list neighbor search\n");
-        parEval.neighbor = this->link_list(parEval.num, parEval.s, parEval.x, parEval.y, Pars::r_scale);
+        parEval.neighbor = this->link_list(parEval.num, parEval.s, parEval.x, parEval.y, int(Pars::r_sup));
     }
     // --- Included neighbor search package from Cell List
     else if (Pars::opt_neighbor == 2)
@@ -63,7 +63,7 @@ void neighbor::neigbor_search(Particle& parEval){
     else if (Pars::opt_neighbor == 3)
     {
         printf("<+> Type 3: Spatial hash neighbor search\n");
-        parEval.neighbor = this->link_list(parEval.num, parEval.s, parEval.x, parEval.y, Pars::r_scale);
+        this->spatial_hash(parEval);
     }
     
     // particle generation initialization summary time display

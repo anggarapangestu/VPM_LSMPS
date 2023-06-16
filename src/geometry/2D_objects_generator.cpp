@@ -10,7 +10,7 @@ void geometry::cylinder_generator(Body &b)
 {
 	// internal variables
 	double *_alfa = new double [Pars::n_a];
-	double d_alfa = (360.0e0/Pars::n_a)*Pars::pi/180.0e0;
+	double d_alfa = (360.0e0/Pars::n_a)*M_PI/180.0e0;
 	double *min = new double[2];
 	double *max = new double[2];
 
@@ -348,7 +348,7 @@ void geometry::naca_generator(Body &b)
 
 	for (int i = 0; i < Pars::n_a+1; i++)
 	{
-		zeta[i] = 2.0e0 * Pars::pi / Pars::n_a * i;
+		zeta[i] = 2.0e0 * M_PI / Pars::n_a * i;
 		x[i]    = 0.5e0 * (std::cos(zeta[i]) + 1);
 	}
 
@@ -407,10 +407,10 @@ void geometry::naca_generator(Body &b)
 	}
 
 	}
-	Rotz[0][0] =  std::cos(Pars::alpha_a*Pars::pi/180.0e0);
-	Rotz[0][1] =  std::sin(Pars::alpha_a*Pars::pi/180.0e0);
-	Rotz[1][0] = -std::sin(Pars::alpha_a*Pars::pi/180.0e0);
-	Rotz[1][1] =  std::cos(Pars::alpha_a*Pars::pi/180.0e0);
+	Rotz[0][0] =  std::cos(Pars::alpha_a*M_PI/180.0e0);
+	Rotz[0][1] =  std::sin(Pars::alpha_a*M_PI/180.0e0);
+	Rotz[1][0] = -std::sin(Pars::alpha_a*M_PI/180.0e0);
+	Rotz[1][1] =  std::cos(Pars::alpha_a*M_PI/180.0e0);
 
 	// resize x and y coordinate of obstacle
 	b.x.clear(); b.x.resize(Pars::n_a + 1);

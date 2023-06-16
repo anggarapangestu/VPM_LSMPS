@@ -29,7 +29,7 @@ void save_data::set_variables(int numberofparticles_x, int numberofparticles_y, 
 }
 
 void save_data::insert_data(Particle &p, int i){
-    if (Pars::dim == 2){
+    if (Pars::DIM == 2){
         this->_p.x.push_back(p.x[i]);
         this->_p.y.push_back(p.y[i]);
         this->_p.s.push_back(p.s[i]);

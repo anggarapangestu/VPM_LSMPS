@@ -33,13 +33,13 @@ int fmm2D::binComb(int n, int k){
 // Function to calculate the direct sum potential
 void fmm2D::potDirSum(int _currID, treeCell& cellData, std::vector<int>& _nghCell, std::vector<std::vector<double>>& pos, std::vector<double>& src){
     // Calculate each particle potential toward each target particle inside the neighbor cell
-    double x0, y0, x1, y1;
-    std::complex<double> z0, z1, zt;
-    std::complex<double> _potential;
-    z0 = std::complex<double>(x0,y0);
-    z1 = std::complex<double>(x1,y1);
+    double x0, y0, x1, y1, R2, _potential;
+    // std::complex<double> z0, z1, zt;
+    // std::complex<double> _potential;
+    // z0 = std::complex<double>(x0,y0);
+    // z1 = std::complex<double>(x1,y1);
 
-    double _r, _i, _l, _t, _ab;
+    // double _r, _i, _l, _t, _ab;
     
     // Iterate through all target particle (inside the current cell ID [_currID])
     // std::cout << "DEBUG LINE NUMBER OF ITERATION: " << cellData.parIDList[_currID].size()<< "\n";
@@ -50,11 +50,12 @@ void fmm2D::potDirSum(int _currID, treeCell& cellData, std::vector<int>& _nghCel
         // Set the target position (target particle position)
         x1 = pos[_tarID][0];
         y1 = pos[_tarID][1];
-        z1 = std::complex<double>(x1, y1);
+        // z1 = std::complex<double>(x1, y1);
 
         // Evaluate all neighbor cell
         for (auto _nghID: _nghCell){
             // Iterate through all source particle (at each neighbor cell ID [_nghID])
+            #pragma omp paralel for
             for (size_t j = 0; j < cellData.parIDList[_nghID].size(); j++){
                 int _srcID = cellData.parIDList[_nghID][j];    // The ID of source particle
 
@@ -66,21 +67,14 @@ void fmm2D::potDirSum(int _currID, treeCell& cellData, std::vector<int>& _nghCel
                 // Set the origin position (source particle position)
                 x0 = pos[_srcID][0];
                 y0 = pos[_srcID][1];
-                z0 = std::complex<double>(x0, y0);
-                
-                // Calculate the potential for each source
-                zt = z1 - z0;
-                _r = zt.real();
-                _i = zt.imag();
-                _ab = _r * _r + _i *_i;
-                _l = std::log(_ab) / 2.0;
-                _t = std::atan2(_i,_r);
 
-                _potential = src[_srcID] * std::complex<double>(_l,_t);
-                // _potential = src[_srcID] * std::log(z1 - z0);
+                R2 = (x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0);
+                // z0 = std::complex<double>(x0, y0);
+                _potential = src[_srcID] * std::log(R2) / 2.0;
 
                 // Perform the potential sum
-                this->parPotential[_tarID] += _potential.real();
+                // this->parPotential[_tarID] += _potential.real();
+                this->parPotential[_tarID] += _potential;
             }
         }
     }
@@ -91,11 +85,11 @@ void fmm2D::potDirSum(int _currID, treeCell& cellData, std::vector<int>& _nghCel
 // Function to calculate the direct sum field
 void fmm2D::fieldDirSum(int _currID, treeCell& cellData, std::vector<int>& _nghCell, std::vector<std::vector<double>>& pos, std::vector<double>& src){
     // Calculate each particle field toward each target particle inside the neighbor cell
-    double x0, y0, x1, y1;
-    std::complex<double> z0, z1;
-    std::complex<double> _field;
-    z0 = std::complex<double>(x0,y0);
-    z1 = std::complex<double>(x1,y1);
+    double x0, y0, x1, y1, dx, dy, R2;
+    // std::complex<double> z0, z1;
+    // std::complex<double> _field;
+    // z0 = std::complex<double>(x0,y0);
+    // z1 = std::complex<double>(x1,y1);
     
     // Iterate through all target particle (inside the current cell ID [_currID])
     for (size_t i = 0; i < cellData.parIDList[_currID].size(); i++){
@@ -104,11 +98,12 @@ void fmm2D::fieldDirSum(int _currID, treeCell& cellData, std::vector<int>& _nghC
         // Set the target position (target particle position)
         x1 = pos[_tarID][0];
         y1 = pos[_tarID][1];
-        z1 = std::complex<double>(x1, y1);
+        // z1 = std::complex<double>(x1, y1);
 
         // Evaluate all neighbor cell
         for (auto _nghID: _nghCell){
             // Iterate through all source particle (at each neighbor cell ID [_nghID])
+            #pragma omp paralel for
             for (size_t j = 0; j < cellData.parIDList[_nghID].size(); j++){
                 int _srcID = cellData.parIDList[_nghID][j];    // The ID of source particle
                 
@@ -120,14 +115,22 @@ void fmm2D::fieldDirSum(int _currID, treeCell& cellData, std::vector<int>& _nghC
                 // Set the origin position (source particle position)
                 x0 = pos[_srcID][0];
                 y0 = pos[_srcID][1];
-                z0 = std::complex<double>(x0, y0);
+                // z0 = std::complex<double>(x0, y0);
+
+                dx = x1 - x0;
+                dy = y1 - y0;
+                R2 = dx*dx + dy*dy;
                 
                 // Calculate the field for each source
-                _field = src[_srcID] / (z1 - z0);
+                // _field = src[_srcID] / (z1 - z0);
+                // _field = src[_srcID] *dx / R2;
                 
                 // Perform the field sum
-                this->parField_x[_tarID] += _field.real();     // The result data field in x direction
-                this->parField_y[_tarID] -= _field.imag();     // The result data field in y direction
+                // this->parField_x[_tarID] += _field.real();     // The result data field in x direction
+                // this->parField_y[_tarID] -= _field.imag();     // The result data field in y direction
+
+                this->parField_x[_tarID] += src[_srcID] * dx / R2;     // The result data field in x direction
+                this->parField_y[_tarID] += src[_srcID] * dy / R2;     // The result data field in y direction
             }
         }
     }
@@ -185,6 +188,7 @@ void fmm2D::setupFMM(treeCell& cellData, std::vector<std::vector<double>>& parPo
         z_0 = std::complex<double>(x0, y0);
         
         // Calculate the multipole source for each expansion order
+        #pragma omp paralel for
         for (size_t j = 0; j < cellData.parIDList[_cellID].size(); j++){
             int _parID = cellData.parIDList[_cellID][j];    // The ID of particle inside cell
             
@@ -213,7 +217,7 @@ void fmm2D::setupFMM(treeCell& cellData, std::vector<std::vector<double>>& parPo
     }
 
     finish = omp_get_wtime();
-	printf("<+> FMM Procedure 1  : %f s\n", finish-start);
+	printf("<+> FMM Procedure 1 [ME]   : %f s\n", finish-start);
         
     // PROCEDURE 2! : Calc. multipole source (ak) of all cell using M2M Translation (UP-PASS)
     // ************
@@ -270,7 +274,7 @@ void fmm2D::setupFMM(treeCell& cellData, std::vector<std::vector<double>>& parPo
     }
 
     finish = omp_get_wtime();
-	printf("<+> FMM Procedure 2  : %f s\n", finish-start);
+	printf("<+> FMM Procedure 2 [M2M]  : %f s\n", finish-start);
 
     // PROCEDURE 3! : Calc. local source (bk) of all cell (contain the well separated neighbor cell only) using M2L Translation
     // ************
@@ -279,6 +283,7 @@ void fmm2D::setupFMM(treeCell& cellData, std::vector<std::vector<double>>& parPo
     start = omp_get_wtime();
 
     const int intCellID = 5;
+    #pragma omp paralel for
     for (int _cellID = intCellID; _cellID < cellNum; _cellID++){
         // Only calculate if there is particle inside the cell
         if (cellData.parNum[_cellID] == 0){
@@ -393,7 +398,7 @@ void fmm2D::setupFMM(treeCell& cellData, std::vector<std::vector<double>>& parPo
     }
     
     finish = omp_get_wtime();
-	printf("<+> FMM Procedure 3  : %f s\n", finish-start);
+	printf("<+> FMM Procedure 3 [M2L]  : %f s\n", finish-start);
     
     // PROCEDURE 4! : Calc. local source (bk) of all cell using L2L Translation (DOWN-PASS)
     // ************
@@ -443,7 +448,7 @@ void fmm2D::setupFMM(treeCell& cellData, std::vector<std::vector<double>>& parPo
     }
     
     finish = omp_get_wtime();
-	printf("<+> FMM Procedure 4  : %f s\n", finish-start);
+	printf("<+> FMM Procedure 4 [L2L]  : %f s\n", finish-start);
     return;
 }
 
@@ -629,7 +634,7 @@ std::vector<bool>& activeMark, std::vector<double>& srcVal)
     }
 
     finish = omp_get_wtime();
-	printf("<+> FMM Procedure 5  : %f s\n", finish-start);
+	printf("<+> FMM Procedure 5 [FMM]  : %f s\n", finish-start);
 
     // printf("<+> FMM Procedure 5.1 : %f s [Direct SUM]\n", total1);
     // printf("<+> FMM Procedure 5.2 : %f s [Semi Farfield Calc.]\n", total2);
@@ -826,7 +831,7 @@ std::vector<bool>& activeMark, std::vector<double>& srcVal)
     }
     
     finish = omp_get_wtime();
-	printf("<+> FMM Procedure 5  : %f s\n", finish-start);
+	printf("<+> FMM Procedure 5 [FMM]  : %f s\n", finish-start);
 
     // printf("<+> FMM Procedure 5.1 : %f s [Direct SUM]\n", total1);
     // printf("<+> FMM Procedure 5.2 : %f s [Semi Farfield Calc.]\n", total2);

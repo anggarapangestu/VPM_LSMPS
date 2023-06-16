@@ -16,11 +16,7 @@
 #include "../velocity_poisson/velocity_biot_savart.hpp"
 #endif
 
-#ifndef INCLUDED_REMESHING_BASE
-#include "../remeshing/base_remeshing.hpp"
-#endif
-
-#ifndef INCLUDED_NEIGHBOR_BASE
+#ifndef INCLUDED_NEIGHBOR
 #include "../neighbor/neighbor.hpp"
 #endif
 
@@ -45,7 +41,7 @@ class save_data
 #pragma region instances
 	velocity_biot_savart d_base_poisson;
 	base_grid d_base_grid;
-	base_remeshing d_base_remeshing;
+	// base_remeshing d_base_remeshing;
 	penalization d_penalization;
 	neighbor d_neighbor;
 	base_save_data d_base_save_data;
@@ -97,15 +93,11 @@ class save_data
 	// 			   vector<double> &up, vector<double> &vp, int &nvertn, vector<vector<double>> &vertex);
 
 public:
-	// constructor
-	save_data();
-	// destructor
-	~save_data();
-
 	// Basic saving data
 	void save_state(Particle &p, string s, int type);		// Saving the state of particle distribution
 	void save_state(const Body &b, string s);				// Saving the state of geometry
 	void summary_log();
+	void save_summary_log(Particle& par);
 	
 	//void particle_data_reading(int it, int &np, vector<double> &xp, vector<double> &yp, vector<double> &sp, vector<double> &gpz, vector<double> &up, vector<double> &vp);
 	//void particle_data_reading(int &nvertn, std::vector<std::vector<double>> &vertex);

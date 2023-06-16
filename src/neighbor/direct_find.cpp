@@ -1,7 +1,7 @@
 #include "neighbor.hpp"
 
 std::vector<std::vector<int>> neighbor::direct_find(const int np, const std::vector<double> &sp,
-                                                    const std::vector<double> &xp, const std::vector<double> &yp, const int neighbor_scale)
+                                                    const std::vector<double> &xp, const std::vector<double> &yp, const double neighbor_scale)
 {
     /*************************************************************************
     **    Subroutine to calculate the smoothing funciton for each particle and
@@ -37,7 +37,8 @@ std::vector<std::vector<int>> neighbor::direct_find(const int np, const std::vec
             _dx = xp[i] - xp[j];
             _dy = yp[i] - yp[j];
             _dr = std::sqrt(std::pow(_dx, 2) + std::pow(_dy, 2));
-            _msp = (sp[i] + sp[j]) / 2;
+            // _msp = (sp[i] + sp[j]) / 2;  // Average value
+            _msp = std::max(sp[i], sp[j]);  // Maximum value
             // msp = sp[i] < sp[j] ? sp[i] : sp[j]; // ! for DC PSE's neighbour searching
             if (_dr < neighbor_scale * _msp)
             {
@@ -50,40 +51,6 @@ std::vector<std::vector<int>> neighbor::direct_find(const int np, const std::vec
             }
         }
     }
-
-    // // statisticas for the interaction
-    // sumiac = 0;
-    // maxiac = 0;
-    // miniac = 1000;
-    // noiac  = 0;
-    // for (int i = 0; i < np; i++)
-    // {
-    //     sumiac = sumiac + countiac[i];
-    //     if (countiac[i] > maxiac)
-    //     {
-    //         maxiac    = countiac[i];
-    //         maxp      = i;
-    //     }
-    //     else if (countiac[i] < miniac)
-    //     {
-    //         miniac    = countiac[i];
-    //         minp      = i;
-    //     }
-    //     else if (countiac[i] == 0)
-    //     {
-    //         noiac = noiac + 1;
-    //     }
-    // }
-
-    // // -- delete internal variables
-    // delete[] countiac;
-
-    //// printf("\n >> Statistics: interactions per particle:");
-    //// printf("\n**** Particle: %d maximal interactions: %d", maxp, maxiac);
-    //// printf("\n**** Particle: %d minimal interactions: %d", minp, miniac);
-    //// printf("\n**** Average : %f", float(sumiac) / float(np) );
-    //// printf("\n**** Total pairs : %d", niac);
-    //// printf("\n**** Particles with no interactions: %d \n", noiac);
 
     return _neighborlist;
 }

@@ -70,8 +70,8 @@ void save_data::save_state(Particle &p, string s, int type)
 	/* Particle distribution saving state description
        * @param p    : particle data to be saved
        * @param type : the type of data saving
-         - Type 1 -> Save the particle at the interested domain only
-         - Type 2 -> Save all particle data
+         - Type 0 -> Save all particle data
+		 - Type 1 -> Save the particle at the interested domain only
        * @param s    : the name for the state
     */
 	
@@ -119,7 +119,40 @@ void save_data::save_state(Particle &p, string s, int type)
 
 	for (int i = 0; i < np; i++)
 	{
-		if (type == 1)	// Only save the interest domain
+		if (type == 0)	// Save whole domain
+		{
+			ofs << "" << p.x[i]
+				<< "," << p.y[i]
+				<< "," << p.gz[i]
+				<< "," << p.vorticity[i]
+				<< "," << p.u[i] - Pars::ubody 
+				<< "," << p.v[i] - Pars::vbody
+				<< "," << p.s[i]
+				<< "," << p.isActive[i]
+				<< "," << p.chi[i]
+				// << "," << p.R[i]
+				// << "," << p.basis_label[i]
+		    	// << "," << p.cell_label[i]
+				;
+			if (_pressure){
+				ofs << "," << p.P[i];
+			}
+			if (_ngh_NUM){
+				ofs << "," << p.neighbor[i].size();
+			}
+			if (_ngh){
+				ofs << "," ;
+				for (int j = 0; j < p.neighbor[i].size(); j++)
+				{
+					if(j == 0)
+						ofs << p.neighbor[i][j];
+					else
+						ofs << "." << p.neighbor[i][j];
+				}
+			}
+			ofs << "\n";
+		}
+		else if (type == 1)	// Only save the interest domain
 		{
 			if (p.x[i] > -limdom && p.x[i] < Pars::Df + limdom && p.y[i] > -limdom && p.y[i] < limdom)
 			{
@@ -154,39 +187,6 @@ void save_data::save_state(Particle &p, string s, int type)
 				}
 				ofs << "\n";
 			}
-		}
-		else if (type == 2)	// Save whole domain
-		{
-			ofs << "" << p.x[i]
-				<< "," << p.y[i]
-				<< "," << p.gz[i]
-				<< "," << p.vorticity[i]
-				<< "," << p.u[i] - Pars::ubody 
-				<< "," << p.v[i] - Pars::vbody
-				<< "," << p.s[i]
-				<< "," << p.isActive[i]
-				<< "," << p.chi[i]
-				// << "," << p.R[i]
-				// << "," << p.basis_label[i]
-		    	// << "," << p.cell_label[i]
-				;
-			if (_pressure){
-				ofs << "," << p.P[i];
-			}
-			if (_ngh_NUM){
-				ofs << "," << p.neighbor[i].size();
-			}
-			if (_ngh){
-				ofs << "," ;
-				for (int j = 0; j < p.neighbor[i].size(); j++)
-				{
-					if(j == 0)
-						ofs << p.neighbor[i][j];
-					else
-						ofs << "." << p.neighbor[i][j];
-				}
-			}
-			ofs << "\n";
 		}
 	}
 	ofs.close();

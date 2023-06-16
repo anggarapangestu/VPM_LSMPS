@@ -129,7 +129,7 @@ void geometry::distance_calc(Particle &p, const Body &b){
 			
 			// Inner product between minDist and normal direction
 			p.R[i] = (p.x[i] - b.x_m[panelNode])*b.x_n[panelNode] + 
-						  (p.y[i] - b.y_m[panelNode])*b.y_n[panelNode];
+					  (p.y[i] - b.y_m[panelNode])*b.y_n[panelNode];
 		}
 	}
 	else if (Pars::DIM == 3) // Calculation for 3D Space 
@@ -149,8 +149,8 @@ void geometry::distance_calc(Particle &p, const Body &b){
 			
 			// Inner product between minDist and normal direction
 			p.R[i] = ((p.x[i] - b.x_m[panelNode])*b.x_n[panelNode] + 
-						  (p.y[i] - b.y_m[panelNode])*b.y_n[panelNode] + 
-						  (p.z[i] - b.z_m[panelNode])*b.z_n[panelNode]);
+					  (p.y[i] - b.y_m[panelNode])*b.y_n[panelNode] + 
+					  (p.z[i] - b.z_m[panelNode])*b.z_n[panelNode]);
 		}
 	}
 }

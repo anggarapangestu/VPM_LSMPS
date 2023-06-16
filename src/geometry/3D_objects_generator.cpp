@@ -21,8 +21,8 @@ void geometry::ball_sphere(Body &b){
 		b.y[i] = _y[i];
 	}*/
     int bruh = 0;
-    for(double phi = 0.; phi < 2* Pars::pi; phi += Pars::pi/30.){ //azimuth [0, 2pi]
-        for(double theta = 0.; theta < Pars::pi; theta += Pars::pi/30.)//elevation [0, pi]
+    for(double phi = 0.; phi < 2* M_PI; phi += M_PI/30.){ //azimuth [0, 2pi]
+        for(double theta = 0.; theta < M_PI; theta += M_PI/30.)//elevation [0, pi]
         {
             double x =  Pars::Df/2 * std::cos(phi) * std::sin(theta);
             double y =  Pars::Df/2 * std::sin(phi) * std::sin(theta);

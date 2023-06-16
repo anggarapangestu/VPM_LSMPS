@@ -4,13 +4,13 @@
 void velocity_biot_savart::biotsavart_fmm_2d(Particle &pi, Particle &pj, const int icutoff, const int n_s, const int n_inter, const int ndp)
 {
 
-	#pragma omp declare reduction(vec_float_plus : std::vector<double> : \
-                  std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
-                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+	// #pragma omp declare reduction(vec_float_plus : std::vector<double> : \
+    //               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
+    //                 initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
 	
-	#pragma omp declare reduction(vec_float_minus : std::vector<double> : \
-                  std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::minus<double>())) \
-                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+	// #pragma omp declare reduction(vec_float_minus : std::vector<double> : \
+    //               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::minus<double>())) \
+    //                 initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
 
 	// Shifting data in order to start indexing from 1
 	int n0 = 1;
@@ -387,7 +387,7 @@ void velocity_biot_savart::biotsavart_fmm_2d(Particle &pi, Particle &pj, const i
 							}
 						}
 
-						cmw2 = -ci * cmw / (2.0e0 * Pars::pi);
+						cmw2 = -ci * cmw / (2.0e0 * M_PI);
 
 						ui[ip] = ui[ip] + std::real(cmw2);
 						vi[ip] = vi[ip] - std::imag(cmw2);						
@@ -411,7 +411,7 @@ void velocity_biot_savart::biotsavart_fmm_2d(Particle &pi, Particle &pj, const i
 							cmw = cmw + bk[ibt[ib][k]][kl] * pow((zi - zg), kl-1);
 						}
 
-						cmw2 = -ci * cmw / (2.0e0 * Pars::pi);
+						cmw2 = -ci * cmw / (2.0e0 * M_PI);
 						//printf("%f, %f\n", std::real(cmww), std::imag(cmww));
 						ui[ipp[ip2-1]] = ui[ipp[ip2-1]] + std::real(cmw2);
 						vi[ipp[ip2-1]] = vi[ipp[ip2-1]] - std::imag(cmw2);

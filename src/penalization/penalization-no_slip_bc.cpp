@@ -50,9 +50,12 @@ void penalization::no_slip(Particle &_p, const Body &b)
     // =================================================
 	// =================== Process 1 ===================
 	// =================================================
-	// Velocity penalization calculation 1
+	// Velocity penalization calculation 1 (IMPLICIT + SEMI)
 	if (Pars::opt_pen == 1 || Pars::opt_pen == 2)
 	{
+		if    (Pars::opt_pen == 1)  {std::cout << "<+> Penalization type               :      IMPLICIT\n";}
+		else/*(Pars::opt_pen == 2)*/{std::cout << "<+> Penalization type               : SEMI-IMPLICIT\n";}
+		
 		for (int i = 0; i < _p.num; i++)
 		{
 			// Consider all velocity
@@ -64,9 +67,10 @@ void penalization::no_slip(Particle &_p, const Body &b)
 			// v_pen[i] = (_p.v[i] + Pars::lambda * Pars::dt * _p.chi[i] * (vS[i] - Pars::v_inf)) / (1.0e0 + (Pars::lambda * Pars::dt * _p.chi[i]));
 		}
 	}
-	// Velocity penalization calculation 2
+	// Velocity penalization calculation 2 (EXPLICIT)
 	else if (Pars::opt_pen == 3)
 	{
+		std::cout << "<+> Penalization type               :      EXPLICIT\n";
 		for (int i = 0; i < _p.num; i++)
 		{
 			// Consider all velocity
@@ -97,7 +101,7 @@ void penalization::no_slip(Particle &_p, const Body &b)
 	// Updating vorticity from calculating
 	
 	// Re-evaluate the neigbor (Note that in this region the resolution is single)
-	_p.neighbor = this->d_neighbor.link_list(_p.num, _p.s, _p.x, _p.y, Pars::r_scale);
+	_p.neighbor = this->d_neighbor.link_list(_p.num, _p.s, _p.x, _p.y, Pars::r_sup);
 	
 	// Performing LSMPS calculation
 	LSMPSa lsmpsa_du;

@@ -35,7 +35,7 @@ void penalization::kai_def(const Body &b, Particle &_p)
         }
         else if (std::abs(_p.R[i]) <= Pars::hmollif) // Inside the mollification region (transition region)
         {
-            _p.chi[i] = -0.5e0 * (-1.0e0 + _p.R[i] / Pars::hmollif + (1.0e0 / Pars::pi) * sin(Pars::pi * _p.R[i] / Pars::hmollif));
+            _p.chi[i] = -0.5e0 * (-1.0e0 + _p.R[i] / Pars::hmollif + (1.0e0 / M_PI) * sin(M_PI * _p.R[i] / Pars::hmollif));
         }
         else if (_p.R[i] < -Pars::hmollif) // Inside the body region only
         {
@@ -81,7 +81,6 @@ void penalization::lambda_def(){
     }
     // EXPLICIT Scheme
     else if (Pars::opt_pen == 3){
-        
         lambda = 1.0e0 / Pars::dt;
     }
 

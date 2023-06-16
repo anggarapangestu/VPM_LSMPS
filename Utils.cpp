@@ -1,4 +1,109 @@
 #include "Utils.hpp"
+
+// Start the simulation counter number
+void simUtil::startCounter(int step){
+	this->iterDigitLen = 1;
+	if (step != 0){
+		iterDigitLen = 1 + std::floor(std::log10(step));
+	}
+	return;
+}
+
+// Printing the iteration number header
+void simUtil::printHeader(int step){
+	// Printing the iteration HEADER
+	{
+		printf("\n\n+");
+		for(int _i = 0; _i < 16 - iterDigitLen/2; _i ++){
+			printf("-");
+		}
+		printf(" Iteration Step %d ", step);
+		for(int _i = 0; _i < 16 - iterDigitLen/2 - iterDigitLen%2; _i ++){
+			printf("-");
+		}
+		printf("+\n");
+	}
+	return;
+}
+
+// Write the iteration saving file number
+void simUtil::saveName(std::string & DataName, int step){
+	int addDigit = Pars::maxDigitLen - this->iterDigitLen;
+	for (int _spc = 0; _spc < addDigit; _spc++)
+		DataName.append("0");
+	DataName.append(std::to_string(step));
+	return;
+}
+
+// Display the stability
+void simUtil::stabilityEval(const Particle&par, std::vector<double>&max){
+	// Initialize parameter
+	double _courNum [3] = {0,0,0};  // [Current, Accumulative, Maximum]
+	double _diffNum [3] = {0,0,0};  // [Current, Accumulative, Maximum]
+	double _stabCrt [3] = {0,0,0};  // [Current, Accumulative, Maximum]
+	for (int _i = 0; _i < par.num; _i++){
+		// Calculating courant number
+		_courNum[0] = std::sqrt(std::pow(par.u[_i],2) + std::pow(par.v[_i],2)) * Pars::dt / par.s[_i];
+		_courNum[1] += _courNum[0];
+		_courNum[2] = _courNum[2] > _courNum[0] ? _courNum[2] : _courNum[0];
+
+		// Calculating diffusion number
+		_diffNum[0] = Pars::NU * Pars::dt / (par.s[_i] * par.s[_i]);
+		_diffNum[1] += _diffNum[0];
+		_diffNum[2] = _diffNum[2] > _diffNum[0] ? _diffNum[2] : _diffNum[0];
+		
+		// Calculating stability criteria
+		_stabCrt[0] = (std::abs(par.gz[_i]))/Pars::NU;
+		_stabCrt[1] += _stabCrt[0];
+		_stabCrt[2] = _stabCrt[2] > _stabCrt[0] ? _stabCrt[2] : _stabCrt[0];
+	}
+	// Average value
+	_courNum[0] = _courNum[1] / par.num;
+	_diffNum[0] = _diffNum[1] / par.num;
+	_stabCrt[0] = _stabCrt[1] / par.num;
+	
+	// Displaying the value
+	printf("Average courant number (C_av)           : %8.4f \n", _courNum[0]);
+	printf("Average diffusion number (Phi_av)       : %8.4f \n", _diffNum[0]);
+	printf("Average stability criteria (Re_h)       : %8.4f \n", _stabCrt[0]);
+	printf("Max courant number (C_max)              : %8.4f \n", _courNum[2]);
+	printf("Max diffusion number (Phi_max)          : %8.4f \n", _diffNum[2]);
+	printf("Max stability criteria (Re_h)           : %8.4f \n", _stabCrt[2]);
+
+	// Input the maximum value
+	max.push_back(_courNum[2]);
+	max.push_back(_diffNum[2]);
+	max.push_back(_stabCrt[2]);
+	return;
+}
+
+// Display the computational prdiction time
+void simUtil::predictCompTime(int step, double curr_comp_time){
+	// The value of "curr_comp_time" is in second (s)
+	// Internal variable
+	int est_time_d, est_time_h, est_time_m; double est_time_s;
+	est_time_s = curr_comp_time * double(Pars::nt - step - 1);
+	
+	// Calculate Day
+	est_time_d = int(est_time_s / (24 * 60 * 60));
+	est_time_s -= est_time_d * (24 * 60 * 60);
+	// Calculate Hour
+	est_time_h = int(est_time_s / (60 * 60));
+	est_time_s -= est_time_h * (60 * 60);
+	// Calculate Minute
+	est_time_m = int(est_time_s / (60));
+	est_time_s -= est_time_m * (60);
+	
+	printf("\n<!> Estimation time to finish run:     %9.3f s", curr_comp_time*double(Pars::nt - step));
+	if (est_time_d == 0){
+		printf("\n<!> Estimation time to finish run: %2dh %2dm %5.2f s", est_time_h, est_time_m, est_time_s);
+	}else{
+		printf("\n<!> Estimation time to finish: %2dd %2dh %2dm %5.2f s", est_time_d, est_time_h, est_time_m, est_time_s);
+	}
+	return;
+}
+
+
 // The class to store the particle inside the cell
 /*
 std::vector<int> CellList::neighborCell(int pos){
@@ -78,28 +183,4 @@ void CellList::createCellList(const Particle &par){
 		particle_inside[pos].emplace_back(i);
 	}
 }
-
-// // constructor
-// // Body::Body();
-// // methods
-// // 	 getter
-// const std::vector<double>& Body::get_x() {return _x; }
-// const std::vector<double>& Body::get_y() {return _y; }
-// const std::vector<double>& Body::get_uT() {return _uT; }
-// const std::vector<double>& Body::get_vT() {return _vT; }
-// const std::vector<double>& Body::get_uR() {return _uR; }
-// const std::vector<double>& Body::get_vR() {return _vR; }
-// const std::vector<double>& Body::get_uDEF() {return _uDEF; }
-// const std::vector<double>& Body::get_vDEF() {return _vDEF; }
-// // 	setter
-// void Body::set_x(const std::vector<double> &x) {_x = x; }
-// void Body::set_y(int size) {_y.clear(); _y.resize(size); }
-// void Body::set_uT(int size) {_uT.clear(); _uT.resize(size); }
-// void Body::set_vT(int size) {_vT.clear(); _vT.resize(size); }
-// void Body::set_uR(int size) {_uR.clear(); _uR.resize(size); }
-// void Body::set_vR(int size) {_vR.clear(); _vR.resize(size); }
-// void Body::set_uDEF(int size) {_uDEF.clear(); _uDEF.resize(size); }
-// void Body::set_vDEF(int size) {_vDEF.clear(); _vDEF.resize(size); }
-// // destructor
-// // Body::~Body();
 */

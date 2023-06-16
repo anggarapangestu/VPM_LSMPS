@@ -1,22 +1,10 @@
-#pragma region include
+#pragma region included_package
 	#ifndef INCLUDED_UTILS		// Already include global
 	#include "Utils.hpp"
 	#endif
 
-	#ifndef INCLUDED_DATA_SAVING
-	#include "src/save_data/data_saving.hpp"
-	// Data stored at each or some iteration:
-		// The simulation parameter (number, domain size, etc.) 	>>> make a log
-		// Run time counter (at each iteration) 		    		>>> Data list per count iteration
-		// Particle data (Neighbor list, chi, active particle, etc.)>>> Data list per count iteration
-		// Property contour data (V, w, P, T)						>>> Data list per count iteration
-		// Additional data (drag, force, moment, lift)				>>> Data list per count iteration
-	#endif
-
-	#ifndef INCLUDED_SAVE_DATA_BASE
-	#include "src/save_data/base_save_data.hpp"
-	#endif
-
+	// Subroutine Packages
+	// *******************
 	#ifndef INCLUDED_GEOMETRY
 	#include "src/geometry/geometry.hpp"
 	#endif
@@ -29,82 +17,79 @@
 	#include "src/remeshing/remeshing.hpp"
 	#endif
 
-	#ifndef INCLUDED_ADVECTION
-	#include "src/advection/advection.hpp"
+	#ifndef INCLUDED_DATA_SAVING
+	#include "src/save_data/data_saving.hpp"
 	#endif
 
-	#ifndef INCLUDED_VELOCITY_POISSON
-	#include "src/velocity_poisson/velocity_poisson.hpp"
+	// Physics Calculation Method
+	// **************************
+	#ifndef INCLUDED_PENALIZATION
+	#include "src/penalization/penalization.hpp"
+	#endif
+
+	#ifndef INCLUDED_ADVECTION
+	#include "src/advection/advection.hpp"
 	#endif
 
 	#ifndef INCLUDED_DIFFUSION
 	#include "src/diffusion/diffusion.hpp"
 	#endif
 
-	#ifndef INCLUDED_PENALIZATION
-	#include "src/penalization/penalization.hpp"
-	#endif
-
-	#ifndef INCLUDED_FORTRAN_UTILS
-	#include "src/Fortran/Utils/FortranUtils.hpp"
-	#endif
-
-	#ifndef INCLUDED_DC_BASE
-	#include "src/DC_operator/base_dc.hpp"
-	#endif
-
-	#ifndef INCLUDED_SOLVER_POISSON
-	#include "src/solver_poisson/solver.hpp"
+	#ifndef INCLUDED_VELOCITY_POISSON
+	#include "src/velocity_poisson/velocity_poisson.hpp"
 	#endif
 
 	#ifndef INCLUDED_PRESSURE_POISSON
 	#include "src/pressure_poisson/pressure_poisson.hpp"
 	#endif
 
+	void saveResidual(Particle&, int);
 
 #pragma endregion
 
 // ************* Program Starts Here ************* //
 int main(int argc, char const *argv[])
 {
+	#pragma region data_storage
+		Body body;		    // The solid object
+		Particle particle; 	// The simulation particle object
+	#pragma endregion
 
-#pragma region data_storage	        // Creating data storage object instance
-	Body body;		    // The solid object
-	Particle particle; 	// The simulation particle object
-#pragma endregion
+	#pragma region subroutine_instances
+		// Initialization tools
+		geometry geom_step;                  // Geometry generation
+		initialization initialization_step;  // Particle distribution
+		remeshing remesh_step;               // Particle redistribution and neighbor search
+		
+		// Solver tools
+		penalization penalization_step;      // Penalization
+		velocity_poisson velocity_step;      // FMM:Biot Savart velocity solver
+		advection advection_step;       	 // Advection
+		diffusion diffusion_step;            // Diffusion
+		// solverpoisson solver_poisson;        // Poisson solver
+		pressure_poisson pressure_step;		 // Poisson solver of pressure
+		
+		// Simulation tools
+		simUtil utilitis_step;               // Simulation utilities
+		save_data save_step;                 // Save particle distribution
+		base_save_data d_base_save_data;     // Save force each time interval
+		std::ofstream _data;
+	#pragma endregion
 
-#pragma region instances 	        // Creating instance of subroutine
-	// Initialization tools
-	geometry geom_step;                  // Geometry generation
-	initialization initialization_step;  // Particle distribution
-	remeshing remesh_step;               // Particle redistribution and neighbor search
-	
-	// Solver tools
-	penalization penalization_step;      // Penalization
-	velocity_poisson velocity_step;      // FMM:Biot Savart velocity solver
-	advection advection_step;       	 // Advection
-	diffusion diffusion_step;            // Diffusion
-	solverpoisson solver_poisson;        // Poisson solver
-	pressure_poisson pressure_step;		 // Poisson solver of pressure
-	
-	// Data saving tools
-	save_data save_step;                 // Save particle distribution
-	base_save_data d_base_save_data;     // Save force each time interval
-#pragma endregion
-
-#pragma region summary_log	        // Displaying and saving parameter summary
+	// [LOG] Display Simulation Log
 	save_step.summary_log();
-#pragma endregion
 
-#pragma region internal_variables	// This is used for continuing simulation
-	double curr_comp_time = 0.0e0;  	// Total computational time at each iteration
-	double cum_comp_time = 0.0e0;   	// The total cumulative of simulation computational time
-	int particle_max_number = 0;    	// The maximum number of particle throughout the simulation
-	int nt_start = 40;	            	// The starting iteration step
-	int maxDigitLen = 1 + std::floor(std::log10(Pars::nt));		// Digit of the maximum iteration
-	double CourMax = Pars::Courant;	    // The global maximum courant number throughout simulation
-	double DiffMax = Pars::Diffusion;	// The global maximum diffusion number throughout simulation
-#pragma endregion
+	#pragma region internal_variable
+		double curr_comp_time = 0.0e0;  	// Total computational time at each iteration
+		double cum_comp_time = 0.0e0;   	// The total cumulative of simulation computational time
+		int nt_start = Pars::cont_num;	    // The starting iteration step
+	#pragma endregion
+
+	#pragma region stability_variable
+		double CourMax = Pars::Courant;	    // The global maximum courant number throughout simulation
+		double DiffMax = Pars::Diffusion;	// The global maximum diffusion number throughout simulation
+		double StabMax = 50*Pars::sigma*Pars::sigma/Pars::NU;	// The global maximum stability criteria throughout simulation
+	#pragma endregion
 	
 	// Pre processing prompt displaying
 	printf("\n#=================================================#");
@@ -112,27 +97,29 @@ int main(int argc, char const *argv[])
 	printf("\n#=================================================#\n");
 
 	// ========== Body Region ==========
+	// *********************************
 	geom_step.generateBody(body);			// Generate the body data
 	save_step.save_state(body,"initial");	// Save the body data
 
 	// ========== Particle Region ==========
+	// *************************************
 	// Initial particle distribution generation
-	if (Pars::opt_cont == 0){
-		initialization_step.generate(body, particle);
-		nt_start = -1;
-	}else if(Pars::opt_cont == 1){
-		initialization_step.continue_simulation(body, particle, nt_start);   // Read the last particle data
+	if (Pars::opt_sim_cont == 0){				// Start at initial time
+		initialization_step.generate_initial(body, particle);
+		nt_start = 0;
+	}else if(Pars::opt_sim_cont == 1){			// Continue simulation (from state data)
+		initialization_step.generate_continue(body, particle, nt_start);
+		nt_start += 1;
 	}
 	
 	// Generate cell list and perform neighbor search
 	remesh_step.remeshing_init(particle);
 	
-	particle.P.resize(particle.num,0.0);
 	// Save the particle data
-	if (Pars::opt_cont == 0){
-		save_step.save_state(particle,"initial", 2);
-	}else if (Pars::opt_cont == 1){
-		save_step.save_state(particle,"continue", 2);
+	if (Pars::opt_sim_cont == 0){				// Start at initial time
+		save_step.save_state(particle,"initial", 0);
+	}else if (Pars::opt_sim_cont == 1){			// Continue simulation (from state data)
+		save_step.save_state(particle,"continue", 0);
 	}
 
 	/*
@@ -167,44 +154,33 @@ int main(int argc, char const *argv[])
 	*/
 	
 	// ========== Initialization Summary ==========
+	// ********************************************
 	printf("\n+------------ Initialization Summary -------------+\n");
 	printf("Number of body node                     : %8d \n", body.num);
 	printf("Number of particle node                 : %8d \n", particle.num);
-	printf("Iteration number                        : %8d \n", Pars::nt);
+	printf("Total iteration number                  : %8d \n", Pars::nt);
 	printf("+-------------------------------------------------+\n");
 	
-	// ========== Update Initialization Summary ==========
-	std::ofstream _data;
-	_data.open("output/Parameter.dat", std::ofstream::out | std::ofstream::app);
-	_data << "Number of initialized particle     :"; _data.width(12);
-	_data << std::right << particle.num << "\n";
-	_data.close();
+	// [LOG] Save Summary Log
+	save_step.save_summary_log(particle);
 
 	// ========== Simulation Run Prompt ==========
+	// *******************************************
 	// Simulation command prompt
 	std::cout << std::endl <<
-	             "<!> The initialization is completed!\n" << 
-	             "<!> Do you want to run the simulation? (yes/no)\n" <<
-				 "    Type here: ";
-    
-	// Simulation command Input
-	bool _run = false;
-	std::string _cmd;
-	std::cin >> _cmd;
+		"<!> The initialization is completed!\n" << 
+		"<!> Do you want to run the simulation? (yes/no)\n" <<
+		"    Type here: ";
+	// Prompt to continue run the simulation
+	bool _run = false;std::string _cmd;std::cin >> _cmd;
+	if (_cmd == "yes" | _cmd == "Yes")	// RUN
+	{_run = true;}
+	else								// DON'T RUN
+	{_run = false;}
 
-	// Run or don't run this simulation
-	if (_cmd == "yes" | _cmd == "Yes")   // RUN
-	{
-		_run = true;
-	}
-	else                                 // DON'T RUN
-	{
-		_run = false;
-	}
-
-	// ===============================================
-	// =============== SIMULATION RUN ================
-	// ===============================================
+	// =====================================================
+	// =============== SIMULATION ITERATION ================
+	// =====================================================
 	if (_run == true)
 	{
 		// Solving processing header prompt
@@ -214,59 +190,27 @@ int main(int argc, char const *argv[])
 		bool resetFMMTree = false;
 		
 		// *************** Iteration Loop Starts Here *************** //
-		for (size_t step = nt_start + 1; step < Pars::nt; step++)
+		for (int step = nt_start; step < Pars::nt; step++)
 		{
 			// *************** ITERATION INITIAL SETTING and DISPLAY *************** //
 			// Calculate the number of iteration digit
-			int iterDigitLen = 1;
-			if (step != 0)iterDigitLen = 1 + std::floor(std::log10(step));
-
-			// Printing the iteration HEADER
-			{
-				printf("\n\n+");
-				for(int _i = 0; _i < 16 - iterDigitLen/2; _i ++){
-					printf("-");
-				}
-				printf(" Iteration Step %d ", (int)step);
-				for(int _i = 0; _i < 16 - iterDigitLen/2 - iterDigitLen%2; _i ++){
-					printf("-");
-				}
-				printf("+\n");
-			}
+			utilitis_step.startCounter(step);
+			utilitis_step.printHeader(step);
 
 			// Printing the stability criteria: courant (C) and diffusion (Phi) number
 			if (Pars::flag_disp_stability){
-				// Initialize parameter
-				double _courNum [3] = {0,0,0};  // [Current, Accumulative, Maximum]
-				double _diffNum [3] = {0,0,0};  // [Current, Accumulative, Maximum]
-				for (int _i = 0; _i < particle.num; _i++){
-					// Calculating courant number
-					_courNum[0] = std::sqrt(std::pow(particle.u[_i],2) + std::pow(particle.v[_i],2)) * Pars::dt / particle.s[_i];
-					_courNum[1] += _courNum[0];
-					_courNum[2] = _courNum[2] > _courNum[0] ? _courNum[2] : _courNum[0];
-
-					// Calculating diffusion number
-					_diffNum[0] = Pars::NU * Pars::dt / (particle.s[_i] * particle.s[_i]);
-					_diffNum[1] += _diffNum[0];
-					_diffNum[2] = _diffNum[2] > _diffNum[0] ? _diffNum[2] : _diffNum[0];
-				}
-				// Average value
-				_courNum[0] = _courNum[1] / particle.num;
-				_diffNum[0] = _diffNum[1] / particle.num;
-				
-				// Displaying the value
-				printf("Average courant number (C_av)           : %8.4f \n", _courNum[0]);
-				printf("Average diffusion number (Phi_av)       : %8.4f \n", _diffNum[0]);
-				printf("Max courant number (C_max)              : %8.4f \n", _courNum[2]);
-				printf("Max diffusion number (Phi_max)          : %8.4f \n", _diffNum[2]);
+				std::vector<double> max_stab;
+				utilitis_step.stabilityEval(particle, max_stab);
 
 				// Update the global stability criteria maximum value
-				if (_courNum[2] > CourMax){CourMax = _courNum[2];}
-				if (_diffNum[2] > DiffMax){DiffMax = _diffNum[2];}
+				if (max_stab[0] > CourMax){CourMax = max_stab[0];}
+				if (max_stab[1] > DiffMax){DiffMax = max_stab[1];}
+				if (max_stab[2] > StabMax){StabMax = max_stab[2];}
 			}
 
 			// Solver computational time manager
-			auto t_start = std::chrono::system_clock::now();
+			// clock_t compTime = clock();		// Using time_t
+			auto t_start = std::chrono::system_clock::now();	// Using chrono
 
 			// *************** THE SOLVER *************** //
 			{
@@ -292,11 +236,12 @@ int main(int argc, char const *argv[])
 				// =============== SOLVER STEP [3] ===============
 				// [3] Perform penalization using Brinkmann: Penalize the velocity in body domain
 				int __step;
-				if ((Pars::opt_cont == 1) && (step == nt_start + 1)){__step = 0;}else{__step = step;}
+				if ((Pars::opt_sim_cont == 1) && (step == nt_start + 1)){__step = 0;}else{__step = step;}
 				
 				penalization_step.get_penalization(particle, body, __step);
+				
 				// Iterative penalization calculation
-				if(Pars::iterative == 2){
+				if(Pars::opt_pen_iter == 2){
 					// Calculate the rotational velocity
 					velocity_step.get_velocity(particle, __step);
 					// Update the velocity by helmholtz decomposition
@@ -309,93 +254,27 @@ int main(int argc, char const *argv[])
 					// Calculate the penalization
 					penalization_step.get_penalization(particle, body, __step);
 				}
-				
-				/*
-				// DATA STATE SAVING after PENALIZATION
-				if (step % Pars::step_inv == 0){
-					int addDigit = maxDigitLen - iterDigitLen;
-					
-					// Writing data file name
-					std::string DataName = "";
-					DataName.append("PEN");
-					for (int _spc = 0; _spc < addDigit; _spc++)
-						DataName.append("0");
-					DataName.append(to_string(step));
-					
-					// Saving particle data
-					save_step.save_state(particle, DataName, 2);
-				}
-				*/
-				
-				// // =============== SOLVER STEP [2] ===============
-				// // [2] Velocity calculation by poisson/biot savart: solving Rotational Velocity & Stretching
-				// // int __step;
-				// if (((Pars::opt_cont == 1) && (step == nt_start + 1)) || resetFMMTree){__step = 0;}else{__step = step;}
-				// // std::cout << "The value of _step : " << __step << "\n";
-				// velocity_step.get_velocity(particle, __step);
-				// // Helmholtz decomposition
-				// // u = u_rotational + u_irrotational
-				// printf("<+> Adding the irrotational velocity term \n");
-				// printf("    [helmholtz backward decomposition]\n");
-				// for (size_t i = 0; i < particle.num; i++){
-				// 	particle.u[i] += Pars::u_inf;
-				// 	particle.v[i] += Pars::v_inf;
-				// }
 
 				// ================ Barrier Mark =================
 				// [!] TODO: Saving Data Force 
 				// Force calculation and saving [Inserted after the Penalization calculation]
 				std::cout << "\nSaving force data ...\n";
-				if (Pars::force_type == 1){
+				if (Pars::opt_force_type == 1){
 					std::cout << "<+> Penalization Force\n";
 					double xpus[2] = {0, 0};
 					d_base_save_data.force_pen(step, particle, xpus);
 				}
-				else if (Pars::force_type == 2){
+				else if (Pars::opt_force_type == 2){
 					save_step.Force2(step,1,2,3,4,1,2,particle);
 				}
 				
 				// =============== SOLVER STEP [4] ===============
 				// [4] Convection/Advection Sub-step: Perform the particle advection
 				advection_step.advection_euler(particle);      // ! later: do 2nd order scheme
-
-				/*
-				// DATA SAVING after DIFFUSION
-				if (step % Pars::step_inv == 0){
-					int addDigit = maxDigitLen - iterDigitLen;
-					
-					// Writing data file name
-					std::string DataName = "";
-					DataName.append("ADV");
-					for (int _spc = 0; _spc < addDigit; _spc++)
-						DataName.append("0");
-					DataName.append(to_string(step));
-					
-					// Saving particle data
-					save_step.save_state(particle, DataName, 2);
-				}
-				*/
 				
 				// =============== SOLVER STEP [5] ===============
 				// [5] Diffusion Sub-step: Calculate the vorticity diffusion & time integration
 				diffusion_step.main_diffusion(particle); // ! later: do 2nd order scheme
-				
-				/*
-				// DATA SAVING after DIFFUSION
-				if (step % Pars::step_inv == 0){
-					int addDigit = maxDigitLen - iterDigitLen;
-					
-					// Writing data file name
-					std::string DataName = "";
-					DataName.append("DIF");
-					for (int _spc = 0; _spc < addDigit; _spc++)
-						DataName.append("0");
-					DataName.append(to_string(step));
-					
-					// Saving particle data
-					save_step.save_state(particle, DataName, 2);
-				}*/
-				
 
 				// =============== SOLVER STEP [1] ===============
 				// [1] Particle redistribution: rearrange the particle distribution by interpolating vorticity
@@ -404,26 +283,13 @@ int main(int argc, char const *argv[])
 					resetFMMTree = remesh_step.get_remeshing(particle, body, step);
 				}
 
-				/*
-				if (step % Pars::step_inv == 0){
-					// Writing data file name
-					std::string DataName = "RMSH_";
-					int addDigit = maxDigitLen - iterDigitLen;
-					for (int _spc = 0; _spc < addDigit; _spc++)
-						DataName.append("0");
-					DataName.append(to_string(step));
-					
-					// Saving particle data
-					save_step.save_state(particle, DataName, 2);
-				}
-				*/
-
 				// =============== SOLVER STEP [2] ===============
 				// [2] Velocity calculation by poisson/biot savart: solving Rotational Velocity & Stretching
 				// int __step;
-				if (((Pars::opt_cont == 1) && (step == nt_start + 1)) || resetFMMTree){__step = 0;}else{__step = step;}
+				if (((Pars::opt_sim_cont == 1) && (step == nt_start + 1)) || resetFMMTree){__step = 0;}else{__step = step;}
 				// std::cout << "The value of _step : " << __step << "\n";
 				velocity_step.get_velocity(particle, __step);
+				
 				// Helmholtz decomposition
 				// u = u_rotational + u_irrotational
 				printf("<+> Adding the irrotational velocity term \n");
@@ -433,86 +299,57 @@ int main(int argc, char const *argv[])
 					particle.v[i] += Pars::v_inf;
 				}
 
-				// Calculating pressure
-				// if (Pars::flag_pressure_calc){
-				// 	pressure_step.get_pressure(particle);
-				// }
-				
-				// if (step > 20){
-				// 	pressure_step.get_pressure(particle);
-				// }
-
 			}	// End of the solver calculation
 
-			// *************** SAVING DATA *************** //
+			// *************** POST PROCESSING *************** //
 			// Save the particle data at given step interval
 			if (step % Pars::step_inv == 0){
+				// Pressure calculation
 				if (Pars::flag_pressure_calc){
 					pressure_step.get_pressure(particle);
 				}
 				
-				// Writing data file name
-				std::string DataName;
-				int addDigit = maxDigitLen - iterDigitLen;
-				for (int _spc = 0; _spc < addDigit; _spc++)
-					DataName.append("0");
-				DataName.append(to_string(step));
-				
 				// Saving particle data
-				save_step.save_state(particle, DataName, 2);
+				std::string DataName;
+				utilitis_step.saveName(DataName, step);			// Writing data file name
+				save_step.save_state(particle, DataName, 0);	// Saving particle data
+				
+				// Saving Residual
+				if (Pars::flag_save_residual == true){
+					saveResidual(particle,step);
+				}
 			}
 
+			// *************** COMPUTATIONAL TIME *************** //
 			// Calculate the accumulative computational time
 			std::chrono::duration<double> elapsed_time_ms = (std::chrono::system_clock::now() - t_start);
-			curr_comp_time = elapsed_time_ms.count();
-			cum_comp_time += curr_comp_time;
+			curr_comp_time = elapsed_time_ms.count();				// Current iteration computational time
+			cum_comp_time += curr_comp_time;						// Accumulative computational time
 
 			// Saving the simulation time for each iteration
 			if (Pars::flag_save_sim_time){
 				if (step == 0){
 					_data.open("output/Simulation_Time.csv");
-					_data << "iteration,sim_time,comp_time,curr_cum_comp_time\n";
-					_data << step << "," << step * Pars::dt << "," << curr_comp_time << "," << cum_comp_time << "\n";
+					_data << "iteration,sim_time,par_num,comp_time,curr_cum_comp_time\n";
+					_data << step << "," << step * Pars::dt << "," << particle.num << "," << curr_comp_time << "," << cum_comp_time << "\n";
 					_data.close();
 				}else{
 					_data.open("output/Simulation_Time.csv", std::ofstream::out | std::ofstream::app);
-					_data << step << "," << step * Pars::dt << "," << curr_comp_time << "," << cum_comp_time << "\n";
+					_data << step << "," << step * Pars::dt << "," << particle.num << "," << curr_comp_time << "," << cum_comp_time << "\n";
 					_data.close();
 				}
 			}
 
 			// Displaying the simulation time for each iteration
-			printf("\n<!> Current simulation time:           %9.3f s \n", step * Pars::dt);
-			printf("\n<!> Current cumulative comp. time:     %9.3f s", curr_comp_time);
-			printf("\n<!> Total cumulative comp. time:       %9.3f s", cum_comp_time);
+			printf("\n**************** Iteration Summary ****************");
+			printf("\n<!> Current iteration sim. time      : %9.3f s", step * Pars::dt);
+			printf("\n<!> Current iteration comp. time     : %9.3f s", curr_comp_time);
+			printf("\n<!> Cumulative computational time    : %9.3f s\n", cum_comp_time);
 
 			// Prediction time to finish the simulation
-			bool _predTime = true;
-			if (_predTime == true){
-				// Internal variable
-				int est_time_d, est_time_h, est_time_m; double est_time_s;
-				est_time_s = curr_comp_time * double(Pars::nt - step - 1);
-				
-				// Calculate Day
-				est_time_d = int(est_time_s / (24 * 60 * 60));
-				est_time_s -= est_time_d * (24 * 60 * 60);
-				// Calculate Hour
-				est_time_h = int(est_time_s / (60 * 60));
-				est_time_s -= est_time_h * (60 * 60);
-				// Calculate Minute
-				est_time_m = int(est_time_s / (60));
-				est_time_s -= est_time_m * (60);
-				
-				printf("\n<!> Estimation time to finish run:     %9.3f s", curr_comp_time*double(Pars::nt - step));
-				if (est_time_d == 0){
-					printf("\n<!> Estimation time to finish run: %2dh %2dm %5.2f s", est_time_h, est_time_m, est_time_s);
-				}else{
-					printf("\n<!> Estimation time to finish: %2dd %2dh %2dm %5.2f s", est_time_d, est_time_h, est_time_m, est_time_s);
-				}
+			if (Pars::flag_disp_pred_time == true){
+				utilitis_step.predictCompTime(step, curr_comp_time);
 			}
-
-			// Update the maximum particle number
-			particle_max_number = particle.num > particle_max_number ? particle.num : particle_max_number;
 
 		}	// Iteration Solver Loop End
 		
@@ -525,20 +362,38 @@ int main(int argc, char const *argv[])
 		// Summary of maximum value throughout the simulation
 		_data.open("output/Parameter.dat", std::ofstream::out | std::ofstream::app);
 		_data << "Maximum number of particle         :"; _data.width(12);
-		_data << std::right << particle_max_number << "\n";
+		_data << std::right << particle.num << "\n";
+
 		_data << std::fixed << std::setprecision(2);
 		_data << "Total computational time           :  "; _data.width(10);
 		_data << std::right << cum_comp_time << " s\n";
+		
 		_data << std::fixed << std::setprecision(4);
 		_data << "Max. global cour. number (C_max)   :  "; _data.width(10);
 		_data << std::right << CourMax << "\n";
 		_data << "Max. global Diff. number (phi_max) :  "; _data.width(10);
 		_data << std::right << DiffMax << "\n";
+		_data << "Max. global Stab. number (Re_h_max):  "; _data.width(10);
+		_data << std::right << StabMax << "\n";
 		_data.close();
 	}
-
 	std::cout << "\n\n#============== SIMULATION FINISHED ==============#\n\n";
-	
+
+	// ========== Simulation Summary ==========
+	// ****************************************
+	printf("+-------------- Simulation Summary ---------------+\n");
+	time_t now = time(0);
+	printf("Simulation end at     : %s", std::ctime(&now));
+	printf("Maximum number of particle            : %8d \n", particle.num);
+	printf("Total iteration number                : %8d \n", Pars::nt);
+	printf("Total computational time              : %8.2f h \n", cum_comp_time/3600.0);
+	printf("Average iteration computing time      : %8.2f s \n", cum_comp_time/Pars::nt);
+	printf("Max. global Courant number (C_max)    : %8.2f \n", CourMax);
+	printf("Max. global Diff. number (phi_max)    : %8.2f \n", DiffMax);
+	printf("Max. global Stab. number (Re_h_max)   : %8.2f \n", StabMax);
+	printf("+-------------------------------------------------+\n");
+	std::cout << "\n#=================================================#\n\n";
+
 	// // ADDITIONAL CODE to Show the argc and argv of main input parameter
 	// std::cout << "\nThere are " << argc << " arguments:" << std::endl;
 	// for (size_t i = 0; i < argc; i ++){

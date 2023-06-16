@@ -34,7 +34,7 @@ void remeshing::redistribute_particles(Particle &parEval)
     t = clock();
     
     // Update the _par2grdNeighbor based on the first neighbor particle
-    // _par2grdNeighbor = d_base_remeshing.inter_search(parEval, this->particleBase);
+    // this->d_neighbor.inter_search(parEval, this->particleBase, _par2grdNeighbor);
     // _par2grdNeighbor = this->d_neighbor.par2grid_neigbor_search(parEval, this->particleBase);
 
     // TODO: redistribute particles

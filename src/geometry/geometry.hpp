@@ -5,8 +5,6 @@
 #include "../../Utils.hpp"
 #endif
 
-#include <fstream>			// For moving_body method
-
 class geometry
 {
 private:
@@ -20,17 +18,17 @@ private:
 	//3D Body Objects Geometry Generation
 	void ball_sphere(Body &b);				// [opt 1] Sphere
 
+	// Other Package
+	void u_var(Body &b);
+
 public:
-	// Geometry Manager
+	// Geometry Method
 	void generateBody(Body &b);
+	void moving_body(int it, Body &b);
 
 	// Minimum distance from particle to body surface
 	void distance_calc(Particle &p, const Body& b);
 	double distance_calc(std::vector<double> & pos, const Body& b);
-
-	// Other Package
-	void moving_body(int it, Body &b);
-	void u_var(Body &b);
 };
 
 #endif

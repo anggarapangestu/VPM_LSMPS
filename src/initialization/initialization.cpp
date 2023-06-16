@@ -1,15 +1,7 @@
 #include "initialization.hpp"
 
-initialization::initialization(/* args */)
-{
-}
-
-initialization::~initialization()
-{
-}
-
 // Particle Distribution Initialization Manager
-void initialization::generate(const Body &b, Particle &p){
+void initialization::generate_initial(const Body &b, Particle &p){
     printf("\n+------------- Particle Distribution -------------+\n");
     // ========== INITIALIZATION: Particles Generation ========== //
     // computational time accumulation
@@ -55,6 +47,14 @@ void initialization::generate(const Body &b, Particle &p){
         }
 	}
 
+    // Resize the other particle data
+    p.gz.resize(p.num, 0.0e0);              // Vortex Strength
+    p.vorticity.resize(p.num, 0.0e0);       // Vorticity
+    p.u.resize(p.num, Pars::u_inf);         // Velocity x
+    p.v.resize(p.num, Pars::v_inf);         // Velocity y
+    p.P.resize(p.num, 0.0e0);               // Pressure
+    p.isActive.resize(p.num, false);        // Active region
+
     // particle generation initialization summary time display
     t = clock() - t;
     printf("<+> Number of initialize particle       : %8d \n", p.num);
@@ -67,46 +67,50 @@ void initialization::generate(const Body &b, Particle &p){
     // ========== INITIALIZATION: Chi and Initial Active Particle Calculation ========== //
     // Adjust the computational time calculation
     t = clock();
-
-    // Calculate the nearest particle distance to body surface
-    d_geom.distance_calc(p,b);
     
     // Adjust the mollification parameter
-    printf("Calculate chi parameter ...\n");
+    printf("Calculate chi parameters ...\n");
     p.chi.resize(p.num, 0.0e0);
     for (int i = 0; i < p.num; i++){
-        // Active particle evaluation
-        if (p.R[i] < Pars::init_act_dist) // Inside the active region, [adjusted MANUAL from global]
-        {
-            p.isActive[i] = true;
-        }
+        if ((p.x[i] > b.min_pos[0] - Pars::body_ext)&&(p.x[i] < b.max_pos[0] + Pars::body_ext)&&
+            (p.y[i] > b.min_pos[1] - Pars::body_ext)&&(p.y[i] < b.max_pos[1] + Pars::body_ext)){
+            // Calculate the minimum distance of current particle from body
+            double _R;
+            std::vector<double> pos({p.x[i], p.y[i]});
+            _R = d_geom.distance_calc(pos,b);
 
-        // Chi calculation and evaluation
-        if (p.R[i] > Pars::hmollif) // Outside the body and mollification region
-        {
-            p.chi[i] = 0.0e0;
-        }
-        else if (std::abs(p.R[i]) <= Pars::hmollif) // Inside the mollification region (transition region)
-        {
-            p.chi[i] = -0.5e0 * (-1.0e0 + p.R[i] / Pars::hmollif + (1.0e0 / Pars::pi) * sin(Pars::pi * p.R[i] / Pars::hmollif));
-        }
-        else if (p.R[i] < Pars::hmollif) // Inside the body region only
-        {
-            p.chi[i] = 1.0e0;
+            // Active particle evaluation
+            if (std::abs(_R) < Pars::body_ext) // Inside the active region, [adjusted MANUAL from global]
+            {
+                p.isActive[i] = true;
+            }
+
+            // Chi calculation and evaluation
+            if (_R > Pars::hmollif) // Outside the body and mollification region
+            {
+                p.chi[i] = 0.0e0;
+            }
+            else if (std::abs(_R) <= Pars::hmollif) // Inside the mollification region (transition region)
+            {
+                p.chi[i] = -0.5e0 * (-1.0e0 + _R / Pars::hmollif + (1.0e0 / M_PI) * sin(M_PI * _R / Pars::hmollif));
+            }
+            else if (_R < Pars::hmollif) // Inside the body region only
+            {
+                p.chi[i] = 1.0e0;
+            }
         }
     }
 
     // chi calculation computational time display
     t = clock() - t;
 	printf("<-> Chi calculation comp. time:        [%f s]\n", (double)t/CLOCKS_PER_SEC);
-    
 
     printf("+-------------------------------------------------+\n");
-
+    return;
 }
 
 // initialization_step.continue_simulation(body, particle, nt_start);   // Read the last particle data
-void initialization::continue_simulation(const Body &b, Particle &par, int step){
+void initialization::generate_continue(const Body &b, Particle &par, int step){
     printf("\n+--------------- Particle Reading ----------------+\n");
     // ========== INITIALIZATION: Particles Reading ========== //
     clock_t t = clock();
@@ -149,7 +153,6 @@ void initialization::continue_simulation(const Body &b, Particle &par, int step)
         loc = 0;
 
         // The sequence of the location index
-        // xp,yp,gpz,vor,up,vp,sp,active
         // xp,yp,gpz,vor,up,vp,sp,active,chi,pressure,ngh_num
         // 0  1   2   3  4  5   6   7    8      9      10
 
@@ -202,12 +205,13 @@ void initialization::continue_simulation(const Body &b, Particle &par, int step)
     readData.close();
 
     // Resize other data
+    par.P.resize(par.num, 0.0e0);
     par.isActive.clear();
     par.isActive.resize(par.num, false);
     
     // particle reading initialization summary time display
     t = clock() - t;
-    printf("<+> Number of initialize particle       : %8d \n", par.num);
+    printf("<+> Number of initialized particle      : %8d \n", par.num);
 	printf("<-> Particle initialization comp.\n");
     printf("    time:                              [%f s]\n", (double)t/CLOCKS_PER_SEC);
 
@@ -223,24 +227,32 @@ void initialization::continue_simulation(const Body &b, Particle &par, int step)
     printf("Calculate chi parameter ...\n");
     par.chi.resize(par.num, 0.0e0);
     for (int i = 0; i < par.num; i++){
-        // Active particle evaluation
-        if (par.R[i] < Pars::init_act_dist) // Inside the active region, [adjusted MANUAL from global]
-        {
-            par.isActive[i] = true;
-        }
+        if ((par.x[i] > b.min_pos[0] - Pars::body_ext)&&(par.x[i] < b.max_pos[0] + Pars::body_ext)&&
+            (par.y[i] > b.min_pos[1] - Pars::body_ext)&&(par.y[i] < b.max_pos[1] + Pars::body_ext)){
+            // Calculate the minimum distance of current particle from body
+            double _R;
+            std::vector<double> pos = {par.x[i], par.y[i]};
+            _R = d_geom.distance_calc(pos,b);
+            
+            // Active particle evaluation
+            if (std::abs(_R) < Pars::body_ext) // Inside the active region, [adjusted MANUAL from global]
+            {
+                par.isActive[i] = true;
+            }
 
-        // Chi calculation and evaluation
-        if (par.R[i] > Pars::hmollif) // Outside the body and mollification region
-        {
-            par.chi[i] = 0.0e0;
-        }
-        else if (std::abs(par.R[i]) <= Pars::hmollif) // Inside the mollification region (transition region)
-        {
-            par.chi[i] = -0.5e0 * (-1.0e0 + par.R[i] / Pars::hmollif + (1.0e0 / Pars::pi) * sin(Pars::pi * par.R[i] / Pars::hmollif));
-        }
-        else if (par.R[i] < Pars::hmollif) // Inside the body region only
-        {
-            par.chi[i] = 1.0e0;
+            // Chi calculation and evaluation
+            if (_R > Pars::hmollif) // Outside the body and mollification region
+            {
+                par.chi[i] = 0.0e0;
+            }
+            else if (std::abs(_R) <= Pars::hmollif) // Inside the mollification region (transition region)
+            {
+                par.chi[i] = -0.5e0 * (-1.0e0 + _R / Pars::hmollif + (1.0e0 / M_PI) * sin(M_PI * _R / Pars::hmollif));
+            }
+            else if (_R < Pars::hmollif) // Inside the body region only
+            {
+                par.chi[i] = 1.0e0;
+            }
         }
     }
 

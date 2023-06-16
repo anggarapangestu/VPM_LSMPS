@@ -2,6 +2,7 @@
 #define FMM_2D_PACKAGE
 
 #include "../../global.hpp"
+#include <complex>
 
 #ifndef INCLUDED_TREE_CELL
 #include "treeCell.hpp"

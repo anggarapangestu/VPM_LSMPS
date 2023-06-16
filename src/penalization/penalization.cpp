@@ -72,10 +72,10 @@ void penalization::get_penalization(Particle &p, const Body &b, int iter_step)
     // PROCEDURE 4: Set up initial penalization parameter
     // ********************************************************************
     // Perform the penalization
-    if (Pars::iterative == 1){
+    if (Pars::opt_pen_iter == 1){
         this->no_slip(_p, b);
     }
-    // else if (Pars::iterative == 2){
+    // else if (Pars::opt_pen_iter == 2){
     //     this->no_slip_iterative(_p, p, b, iter_step);
     // }
 

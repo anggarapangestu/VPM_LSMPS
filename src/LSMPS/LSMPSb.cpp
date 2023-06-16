@@ -28,52 +28,6 @@ void LSMPSb::set_LSMPS(const std::vector<double> &x, const std::vector<double> &
 
     // perform calculation
     this->calculate_LSMPS(x, y, s, f, xi, yi, si, fi, neighborlistInter, neighborlistIntra);
-
-// TODO: perform testing
-#pragma region testing
-    // double _a = -9.97681;
-    // double _b = -5.28855;
-    // double _c = 2.96304;
-    // double _d = -8.51253;
-    // double _e = -4.59517;
-    // double _f = -2.79946;
-    // std::ofstream ofs00, ofs10, ofs01, ofs11, ofs20, ofs02;
-    // ofs00.open("output/lsmpsb_00.dat");
-    // ofs10.open("output/lsmpsb_10.dat");
-    // ofs01.open("output/lsmpsb_01.dat");
-    // ofs11.open("output/lsmpsb_11.dat");
-    // ofs20.open("output/lsmpsb_20.dat");
-    // ofs02.open("output/lsmpsb_02.dat");
-    // for (size_t i = 0; i < nparticle; i++)
-    // {
-    //     double _analytic = _a * std::pow(x[i], 2) + _b * std::pow(y[i], 2) + _c * x[i] * y[i] + _d * x[i] + _e * y[i] + _f;
-    //     double _ddxAnalytic = 2 * _a * x[i] + _c * y[i] + _d;
-    //     double _ddyAnalytic = 2 * _b * y[i] + _c * x[i] + _e;
-    //     double _d2d2xAnalytic = 2 * _a;
-    //     double _d2dxdyAnalytic = _c;
-    //     double _d2d2yAnalytic = 2 * _b;
-
-    //     double _ratio00 = std::abs(_d00[i]) / std::abs(_analytic);
-    //     double _ratio10 = std::abs(_ddx[i]) / std::abs(_ddxAnalytic);
-    //     double _ratio01 = std::abs(_ddy[i]) / std::abs(_ddyAnalytic);
-    //     double _ratio11 = std::abs(_d2dxdy[i]) / std::abs(_d2dxdyAnalytic);
-    //     double _ratio20 = std::abs(_d2d2x[i]) / std::abs(_d2d2xAnalytic);
-    //     double _ratio02 = std::abs(_d2d2y[i]) / std::abs(_d2d2yAnalytic);
-
-    //     ofs00 << x[i] << " " << y[i] << " " << _analytic << " " << _d00[i] << " " << _ratio00 << "\n";
-    //     ofs10 << x[i] << " " << y[i] << " " << _ddxAnalytic << " " << _ddx[i] << " " << _ratio10 << "\n";
-    //     ofs01 << x[i] << " " << y[i] << " " << _ddyAnalytic << " " << _ddy[i] << " " << _ratio01 << "\n";
-    //     ofs11 << x[i] << " " << y[i] << " " << _d2dxdyAnalytic << " " << _d2dxdy[i] << " " << _ratio11 << "\n";
-    //     ofs20 << x[i] << " " << y[i] << " " << _d2d2xAnalytic << " " << _d2d2x[i] << " " << _ratio20 << "\n";
-    //     ofs02 << x[i] << " " << y[i] << " " << _d2d2yAnalytic << " " << _d2d2y[i] << " " << _ratio02 << "\n";
-    // }
-    // ofs00.close();
-    // ofs10.close();
-    // ofs01.close();
-    // ofs11.close();
-    // ofs20.close();
-    // ofs02.close();
-#pragma endregion
 }
 // ***************************************************************************
 // ---------------------------------------------------------------------------
@@ -144,6 +98,7 @@ void LSMPSb::calculate_LSMPS(const std::vector<double> &x, const std::vector<dou
     std::vector<double> averageDiameter(nparticle, 0.0e0);
 
     // Evaluate the LSMPS B of all GRID particle (NOT the PARTICLE variable !)
+    #pragma omp paralel for
     for (size_t i = 0; i < nparticle; i++)
     {
         // Initialize the LSMPS matrices

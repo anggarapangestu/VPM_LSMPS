@@ -32,11 +32,17 @@ public:
 	////     std::vector<int> &pair_i, std::vector<int> &pair_j, int neighbor_scale);
 	// TODO: generate neighborhood using direct searching
 	std::vector<std::vector<int>> direct_find(const int np, const std::vector<double> &sp,
-											  const std::vector<double> &xp, const std::vector<double> &yp, const int neighbor_scale);
+											  const std::vector<double> &xp, const std::vector<double> &yp, const double neighbor_scale);
 	// ! -- obsolete --
 	//// void direct_find(const int np, const std::vector<double> &sp, const std::vector<double> &xp, const std::vector<double> &yp,
 	//// 				 std::vector<int> &pair_i, std::vector<int> &pair_j, const int neighbor_scale);
 	
+	// Inter search neighbor search based on spatial hashing
+	void inter_search(const Particle &p_scatter, const Particle &p_grid, std::vector<std::vector<int>> &ngh_list);
+	
+	// Spatial hashing
+	void spatial_hash(Particle &parEval);
+
 	//3-D Neighbour Search
 	//direct search
 	void direct_3d(Particle &p, const int np, const double neighbor_scale);

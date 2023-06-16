@@ -32,17 +32,21 @@ void base_grid::spatial_hashing(Particle &p, Cell &cell, const int np, const dou
 
     //Particle _par;
     //_par = p; 
+    double xmin = *std::min_element(p.x.begin(), p.x.end());
+    double ymin = *std::min_element(p.y.begin(), p.y.end());
+    double zmin = *std::min_element(p.z.begin(), p.z.end());
+    double xmax = *std::max_element(p.x.begin(), p.x.end());
 
-    double cell_width = (Pars::xmax - Pars::xmin)/cell_size; //saat ini domain masih berbentuk kubus
+    double cell_width = (xmax - xmin)/cell_size; //saat ini domain masih berbentuk kubus
     double conversionfactor = 1.0 / cell_size;
     
     
     for (int i = 0 ; i < np; i++){        
-        int cell_num = floor((p.x[i] + abs(Pars::xmin)) * conversionfactor) + floor((p.y[i] + abs(Pars::ymin)) * conversionfactor) * cell_width + floor((p.z[i] + abs(Pars::zmin)) * conversionfactor) * cell_width * cell_width;
+        int cell_num = floor((p.x[i] + abs(xmin)) * conversionfactor) + floor((p.y[i] + abs(ymin)) * conversionfactor) * cell_width + floor((p.z[i] + abs(zmin)) * conversionfactor) * cell_width * cell_width;
         cell.particle_inside[cell_num].push_back(i);
-        cell.x[i] = (floor((p.x[i] + abs(Pars::xmin)) * conversionfactor));
-        cell.y[i] = (floor((p.y[i] + abs(Pars::ymin)) * conversionfactor));
-        cell.z[i] = (floor((p.z[i] + abs(Pars::ymin)) * conversionfactor));
+        cell.x[i] = (floor((p.x[i] + abs(xmin)) * conversionfactor));
+        cell.y[i] = (floor((p.y[i] + abs(ymin)) * conversionfactor));
+        cell.z[i] = (floor((p.z[i] + abs(ymin)) * conversionfactor));
         p.hash_cell.push_back(cell_num);
     }
 }

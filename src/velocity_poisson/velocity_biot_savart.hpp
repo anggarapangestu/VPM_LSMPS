@@ -5,9 +5,9 @@
 #include "../../Utils.hpp"
 #endif
 
-#ifndef PROGRESSBAR_PROGRESSBAR_HPP
-#include "../display/ProgressBar.hpp" // displaying percentage bar
-#endif
+// #ifndef PROGRESSBAR_PROGRESSBAR_HPP
+// #include "../display/ProgressBar.hpp" // displaying percentage bar
+// #endif
 #include <sstream> 
 #include <fstream>
 

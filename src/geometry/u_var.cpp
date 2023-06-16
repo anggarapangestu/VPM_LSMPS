@@ -71,17 +71,5 @@ void geometry::u_var(Body &b)
 	printf("<-> body velocity calculation\n");
 	printf("    comp. time:                        [%f s]\n", (double)d_time / CLOCKS_PER_SEC);
 	
-	// Uncomment Below to Save the data
-	// // Saving data
-	// // Write each body particle velocity at each time step
-	// std::ofstream ofs;
-	// ofs.open("output/u_var.dat");
-	// for (size_t i = 0; i < Pars::nt; i++)
-	// {
-	// 	ofs << b.uT[i] << " " << b.vT[i] << "\n";
-	// }
-	// ofs.close();
-
-	// deallocating memory
 	delete[] t;
 }

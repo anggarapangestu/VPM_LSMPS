@@ -1,74 +1,106 @@
 #ifndef INCLUDED_GLOBAL
 #define INCLUDED_GLOBAL
 
+// #ifndef INCLUDED_UTILS
+// #include "Utils.hpp"
+// #endif
+
 // Mains and basics
 #include <iostream>
-#include <cmath>
+#include <fstream>
 #include <vector>
+#include <string>
 #include <time.h>   // clock_t
 #include <chrono>   // clock_t
+#include <cmath>
 
 // Additionals
-#include <math.h>
 #include <omp.h>    // pragma omp ...
-#include <complex>  // std::complex<>
-#include <numeric>
 #include <algorithm>
+// #include <math.h>
+// #include <complex>  // std::complex<>
+// #include <numeric>
 
 namespace Pars
 {
 // Predescription for each parameter variable
-// [A] -> Already given in this program (default constant)
-// [I] -> Input for PARAMETER form user 
+// [A] -> Already given in this program
+// [I] -> Input for PARAMETER form user
 // [O] -> Input for OPTION form user, if not will use default
 // [C] -> Calculated form user input
-    
-    // ================== Parameter for Testing ================== //
-    extern const int testtype;  
 
-    // ================== Basic Math Parameter/Constant ================== //
-    extern const double pi;     // [A] Math pi
-
-    // ================== Simulation flag option ================== //
+    // ===================================================== //
+    // +----------------- Simulation Flag -----------------+ //
+    // ===================================================== //
+    // Saving Flag
     extern const bool flag_save_body;       // The flag to save body data
     extern const bool flag_save_cell;       // The flag to save cell list data
     extern const bool flag_save_parameter;  // The flag to save simulation parameter
     extern const bool flag_save_sim_time;   // The flag to save simulation time and computational time
+    extern const bool flag_save_residual;   // The flag for calculating and saving residual
+
+    // Displaying Flag
     extern const bool flag_disp_stability;  // The flag to display stability parameter at each iteration
-    extern const bool flag_pressure_calc;   // The flag to calculate pressure
+    extern const bool flag_disp_pred_time;  // The flag to display the prediction of total computational time until the end of simulation
+    
+    // Operator Flag
+    extern const bool flag_pressure_calc;   // The flag to calculate pressure on post processing
     extern const bool flag_adaptive_dist;   // The flag for adaptive particle distribution
 
-    extern const int opt_cont;     // =0/1 Not/continue the stoped running
+    // ================================================================= //
+    // +----------------- Simulation Parameter Option -----------------+ //
+    // ================================================================= //
+    extern const int opt_sim_cont;  // [O] Option for starting simulation\
+                                            0:= Start at initial;\
+                                            1:= continue from the iteration ("cont_num") see the variable at "Computation Parameter"
+    extern const int opt_init;      // [O] The initialization type option; \
+                                            0:= Testing Resolution;\
+                                            1:= Single Resolution;\
+                                            2:= Multi-Res Single Block;\
+                                            3:= Multi-Res Multi Block; // [Not Ready YET] \
+                                            4:= Multi-Res Body Adjusted;
+    extern const int opt_body;      // [O] The body type option; \
+                                            1:= 2D - Circular cylinder, 3D - Sphere;\
+                                            2:= Flat plate;\
+                                            3:= Normal plate;\
+                                            4:= Square cylinder;\
+                                            5:= NACA airfoil;
+    extern const int opt_neighbor;  // [O] The neighbor evaluation type option; \
+                                            0:= Direct Neighbor Search;\
+                                            1:= Linked List;\
+                                            2:= Cell List;\
+                                            3:= Spatial Hash;
+    extern const int opt_pen_iter;  // [O] The brinkman iterative type option; \
+                                            1 := classical brinkmann, \
+                                            2 := iterative brinkmann
 
-    // ================== Simulation Fundamental Option ================== //
-    extern const int DIM;       // [I] Spatial domain dimension; 2= 2D simulation, 3= 3D simulation
-    extern const double lxdom;      // Initial domain length (x-axis)
-    extern const double lydom;      // Initial domain length (y-axis)
-    extern const double lzdom;      // Initial domain length (z-axis)
-    extern const double xdom;
-    extern const double xcenter;    // Initial domain center (x-axis), default 0.0
-    extern const double ycenter;    // Initial domain center (y-axis),  default 0.0
+    // ============================================================== //
+    // +----------------- Simulation Domain Option -----------------+ //
+    // ============================================================== //
+    extern const int DIM;        // [I] Spatial domain dimension; 2:= 2D simulation; 3:= 3D simulation
+    extern const double lxdom;   // [I] Initial condition domain length of particle distribution on x-axis
+    extern const double lydom;   // [I] Initial condition domain length of particle distribution on y-axis
+    extern const double lzdom;   // [I] Initial domain length (z-axis)
+    extern const double xdom;    // [I] Negative x-direction domain length 
+    extern const double xcenter; // [I] Initial domain center (x-axis), default 0.0
+    extern const double ycenter; // [I] Initial domain center (y-axis), default 0.0
 
-/*domain illustration
-|------------------------------|
-|                              |
-|                              |
-|     (xcenter, ycenter)       |
-|<------------>*               | lydom
-|     xdom                     |
-|                              |
-|                              |
-|------------------------------|
-            lxdom
-
-*/
-
-    // Initialization
-    extern const int init_type;
-    extern const double dev;
-    extern const double c;
-
-    // ================== Incompressible Fluid Properties ================== //
+    /*  Domain Illustration, see below.
+                     |----------------------------------|
+                     |                                  |
+                     |                                  |
+                     |     (xcenter, ycenter)           |
+                     |<------------>*                   | lydom
+                     |     xdom                         |
+                     |                                  |
+                     |                                  |
+                     |----------------------------------|
+                                      lxdom
+    */
+    
+    // ===================================================================== //
+    // +----------------- Incompressible Fluid Properties -----------------+ //
+    // ===================================================================== //
     extern const double RE;     // [I] The reynold number (U)
     extern const double u_inf;  // [I] Freestream x-direction velocity
     extern const double v_inf;  // [I] Freestream y-direction velocity
@@ -78,186 +110,152 @@ namespace Pars
     extern const double NU;     // [C] Kinematic viscousity
     extern const double MU;     // [C] Dynamic viscousity
 
-    // ================== Computation Parameter ================== //
+    // =========================================================== //
+    // ------------------ Computation Parameter ------------------ //
+    // =========================================================== //
+    // Basic parameter
     extern const double sigma;      // [I] Particle core size; ? default: 0.0025, dt~(1/2)*sigma - (1/3)*sigma
     extern const double dt;         // [I] Simulation time step; ? default:0.001, dt <= phi_s*sigma^2/vis (Ploumhans [2000]) OR dt = phi_s*sigma^2*Courant^2/vis, where 0 < Courant <= 1
+    extern const double sim_time;   // [I] The total simulation time
+    extern const int cont_num;      // [I] The continue data number ID
+
+    // Stability Criteria
     extern const double phi_s;      // [A] (Ploumhans [2000]) for the Euler explicit scheme,phi_s = 0.595, !for the Adams–Bashforth 2 scheme, phi_s = 0.297, BUt can not use AB2 due to redistribution changes np--> need Biot-Savart again
     extern const double Courant;    // [C] Courant number(C): C = U_inf * dt / sigma, where 0 < C <= 1
     extern const double Diffusion;  // [C] Diffusion number(Phi): Phi =  NU * dt / sigma^2, where 0 < Phi <= 0.5
+    // extern const double Courant =           // sigma = sqrt(dt*vis/phi_s)/Courant, where 0 < Courant <= 1
+    //     std::sqrt(dt * vis / phi_s) / sigma;
+    
+    // Other utilities
+    extern const int maxDigitLen;   // [C] Number of save name ID maximum digit
+    extern const int nrmsh;         // [I] Step interval for remeshing evaluation
+
+    // =========================================================== //
+    // ------------------ Neighboring Parameter ------------------ //
+    // =========================================================== //
     extern const double r_sup;      // [I] Neighbor evaluation support domain ratio size
     extern const double r_buff;     // [I] The buffer region radius factor
+    extern const double body_ext;   // [I] The body extention distance to evaluate the chi and active particle
     extern const int max_level;     // [I] Number of resolution level
                                         // -> Level is counted from 0 as the larger particle size
                                         // -> Maximum level is the finest particle size
-                                        // -> The default max level is 0 (which is single resolution)
-    
-    // ================== Simulation Solid Parameter ================== //
-    extern const double Df;     // [I] Reference length, flat plate: chord, sphere: diameter
-    extern const int opt_body;  // [O] The body type option
-    extern const int opt_init;  // [O] The initialization type option
-    extern const int n_a;       // [I] Number of body surface node
-    extern const double H_star; // [I] H*=W/L the width to length ratio
-    // Body velocity
-    extern const int opt_u;     // [O] Body velocity option; 1= Suddenly start and stop (Instanteneosly appear), 2= smoothly start and stop, 3= moving
-    extern const double ubody;  // [I] Body x-direction velocity
-    extern const double vbody;  // [I] Body y-direction velocity
+                                        // -> The number of resolution is 'max_level' + 1
+
+    // ========================================================== //
+    // ------------------ Solid Body Parameter ------------------ //
+    // ========================================================== //
     // Whole Geometry Parameter
+    extern const int n_a;           // [I] Number of body surface node
+    extern const double ly;         // [I] flat plate: length, sphere: diameter (flat plate: length, sphere: diameter, Square: side.)
+    extern const double lx;         // [I] sphere: diameter; chord*length ! lx*ly ! Flatplate, if sphere  A= pi*Df^2/4
+    extern const double Df;         // [I] Reference length, flat plate: chord, sphere: diameter
+    extern const double H_star;     // [I] Parameter for flat plate and normal plate: H*=H/L
+    
+    // Body velocity
+    extern const int opt_u;         // [O] Body velocity option; 1= Suddenly start and stop (Instanteneosly appear), 2= smoothly start and stop, 3= moving
+    extern const double ubody;      // [I] Body x-direction velocity
+    extern const double vbody;      // [I] Body y-direction velocity
+
+    // NACA Series parameter
     // NACA4-digit series: NACA(m*100)(p*10)(t*100) 2412,4612, Cylinder, or Flat plate
-    extern const double m_a;    // [I] max thickness
-    extern const double p_a;    // [I] maximum thickness position in percent of chord
-    extern const double t_a;    // [I] is maximum thickness of airfoil in tenth of chord
-    extern const double acx ;   // [I] aerodynamic center location
-    extern const double acy ;   // [I] aerodynamic center location
-    extern const double alpha_a;// [I] alpha in degree , rotated angle (attached angle), ! Rotated airfoil
-    extern const double ly;     // [I] flat plate: length, sphere: diameter
-    extern const double lx;     // [I] sphere: diameter
-    
-    // ================== Penalization Parameter ================== //
-    extern const int opt_pen;       // [O] The penalization type option; 1:= semi-implicit penalization, Rasmussen 2011 mixed with explicit; 2:= Explicit scheme, Rasmussen 2011
-    extern const int opt_lampen;    // [O] The lambda option; 1:= lambda = 1.0d4; 2:= lambda = 1.0d0/dt
-    extern int opt_kaipen;          // [O] The χ (chi/kai) option; 0:= no recalculate kai; 1:= recalculated by kai~ ! to avoid singularities Rasmussen phD 2011
-    extern const int numpen;        // [I] Number of offset particle from body surface for penalization domain
-    extern const double hmollif;    // [I] The mollification length
-    extern double lambda;           // [C] Value of penalization
-    extern const int iterative;     // A2D
+    extern const double m_a;        // [I] max thickness
+    extern const double p_a;        // [I] maximum thickness position in percent of chord
+    extern const double t_a;        // [I] is maximum thickness of airfoil in tenth of chord
+    extern const double acx;        // [I] aerodynamic center location
+    extern const double acy;        // [I] aerodynamic center location
+    extern const double alpha_a;    // [I] alpha in degree , rotated angle (attached angle), ! Rotated airfoil
 
-    extern const bool opt_run_simulation; // true = save data during penalization; vice versa.
+    // ============================================================ //
+    // ------------------ Penalization Parameter ------------------ //
+    // ============================================================ //
+    extern const int opt_force_type;    // [O] The force calculation type;\
+                                                    0:= No force calculation; \
+                                                    1:= By penalization method; \
+                                                    2:= By NOCA method
+    extern const int opt_pen;           // [O] The penalization type option; \
+                                                    1:= implicit penalization; (lambda = 1.0e4) \
+                                                    2:= semi-implicit penalization,Rasmussen 2011 mixed with explicit; \
+                                                    3:= Explicit scheme, Rasmussen 2011 (lambda = 1.0d0/dt)
+    extern int opt_kaipen;              // [O] The χ (chi/kai) option; 0:= no recalculate kai; 1:= recalculated by kai~ ! to avoid singularities Rasmussen phD 2011
+    extern double lambda;               // [O] Value of penalization
+    extern const int numpen;            // [I] Number of points from surface for penalization domain;beberapa referensi ngasihnya 6
+    extern const double hmollif;        // [I] The mollification length [2sqrt(2)*sigma] <- 2D, the half of it [sqrt(2)*sigma]
 
-    // ================== Saving Parameter ================== //
-    extern const double simulation_time;    // The simulation time??
-    extern const double comtime_sf;         // % Save file frequently after how many [second]=[hour]*60*60, only in case of running is stopped suddenly, but nt_sf take long days
-    extern const int opt_extra_data;        // 
-    extern const int force_type;            // asd
-    extern const int nt;         // number of iterations step
-    extern const int nt_data;    // number of data saved, added 16:04 March 23 by Angga
-    extern const int step_inv;   // step interval for data saving
-    extern const int nt_sf; // save data per ( nt_sf ) time step, for saving storage MEMORY and for case of running is stopped suddenly
-
-    // ================== Other New Parameter ================== //
-    extern const double init_act_dist;           // The initial active distance factor toward particle size
-    // extern const double simulation_time;    // 
-
-    // in case of opt_extra_data = 1/2:
-    // in case of continue
-    extern const int it_stop_full; // the last file which have full data (before/at stop) (last file saved by comtime_sf or nt_sf), [changeable]
-    // in case of opt_extra_data = 3 print extra data from common data, MUST run case 1/2 first:
-    extern const int it_start; // the first step you want to get extra data for postprocessing
-    extern const int it_end;   // the last step you want to get extra data for postprocessing
-    // in case of opt_extra_data = 2/3:
-    extern const int opt_extra_pres;      // = 0/1  not/ print pressure on grid
-    extern const int opt_extra_pres_wall; // = 0/1  not/ print pressure on surface of body
-
-    // THE BELOW PARAMETER IS IN A CONSIDERATION !!!
-
-    //================== Simulation Selection ==========================//
-    extern const int sim;
-    extern const double alpha;   // (Overlaping factor)
-    extern const double gamtrim; // parameter for Extruding blobs, ! 2D: 1.0e-04 Ploumhans 2000, 3D 1.0e-04 (Ploumhans [2002])
-    extern const double re_trsh; // Re_h,trsh = 1.0e-04 (Ploumhans [2002]) 3D
-    extern const double area;    // chord*length ! lz*ly ! Flatplate, if sphere  A= pi*Df^2/4
-
-    extern const double x_new_1; // For bigger domain build
-    extern const double x_new_2;
-    extern const double y_new_1;
-    extern const double y_new_2;
-
-    // Multiresolution parameters
-    extern const double D_0;   // maximum core size
-    extern const double dcmin; // minimum equivalent distance
-
-    // Spatial Hashing Parameters
-    extern const double cell_size; //size of cell
-    extern const double xmin; 
-    extern const double ymin;
-    extern const double zmin;
-    extern const double xmax;
-    extern const double ymax;
-    extern const double zmax;
-    
-    // DC PSE operators parameter ===================================== //
-    extern const double beta;
-    extern const double epsilon;
-    extern const int l_2_0_2; // moment condition for Q(2,0) or Q(0,2) with 2nd order accuracy
-    extern const int l_2_0_4; // moment condition for Q(2,0) or Q(0,2) with 4th order accuracy
-    extern const int l_1_0_2; // moment condition for Q(1,0) or Q(0,1) with 2nd order accuracy
-    extern const int l_1_0_4; // moment condition for Q(1,0) or Q(0,1) with 4th order accuracy
-    extern const int l_0_0_3; // moment condition for Q(0,0) with 3rd order accuracy
-
-    // ====== BOX Generation for post-processing extra data =========== //
-    extern const int opt_gdata_vel; // =1 Using Biot-savart calculate Velocity on grid via Vorticity Strength on grid, =2 Remeshing Velocity from particle velocity
-
-    // parameter for link list ======================================== //
-    extern const int dim; // dimension
-    extern const int skf; // Gauss spline
-    extern int opt_neighbor;
-    extern const int r_scale;
-
+    // =================================================== //
+    // ------------------ FMM Parameter ------------------ //
+    // =================================================== //
     // Tree option
-    extern const double expTree;  // The percentage of tree root cell size expansion
+    extern const double expTree;    // [I] The percentage of tree root cell size expansion
 
     // FMM option
-    extern const int P_max;          // Number of the expansion
-    extern const int level_max;       // The tree level of the finest cell
-    extern const int level_min;       // The tree level of the coarser cell
-    extern const int n_max;          // Maximum number of the particle inside the cell
-    extern const double tol_dist;   // The maximum tolerance of cell size
+    extern const int ioptfmm;       // [O] Selection of the velocity calculation method;\
+                                        0:= Direct calculation,\
+                                        1:= FMM accelerated
+    extern const int P_max;         // [O] Number of the expansion (P_max=10 for error in order of 10^-3)
+    extern const int level_max;     // [I] The tree level of the finest cell
+    extern const int level_min;     // [I] The tree level of the coarse cell
+    extern const int n_max;         // [I] Maximum number of the particle inside the cell
+    extern const double tol_dist;   // [A] The maximum tolerance of cell size (In evaluating adjacent cell)
 
-    // parameter for FMM ============================================== //
-    extern const int lmax; // max of FMM levels
-    extern const int npcm;
-    extern const int nfwrd;
-    extern const int nbmax;
-    extern const int nbl1;
-    extern const int nbl2;
-    extern const int nbl3;
-    extern const int nbl4;
-    extern const int nbmrl;
-    extern const double tol2;
+    // Old FMM parameter
+    extern const int lmax;          // [I] Max of FMM levels
+    extern const int npcm;          // [I] Number of pole expansion
+    extern const int nfwrd;         // std::pow(4,(lmax+1));   //nfwrd * (std::pow(4, (lmax + 1)) - 4) / 3;
+    extern const int nbmax;         // Geometric Series formula
+    extern const int nbmrl;         //nfwrd * 4096; //!!need to change if so that nbmrl >= 4^lmax
+    extern const int nbl1;          // [A] Number of list 1 neighbor
+    extern const int nbl2;          // [A] Number of list 2 neighbor
+    extern const int nbl3;          // [A] Number of list 3 neighbor
+    extern const int nbl4;          // [A] Number of list 4 neighbor
+    extern const double tol2;       // [A] The maximum tolerance of cell size (In evaluating adjacent cell)
+    extern const int n_s;           // [I] Number of maximum total particle inside a cell
+    extern const int ndp;           // [I] The order of multipole expansion
+    extern const int icutoff;       // [O] The redistribution function for direct potential calculation\
+                                        0:= Singular,\
+                                        1:= Super (high-oder) algebraic,\
+                                        2:= Gaussian,\
+                                        3:= Super Gaussian
+                                    // Note:\
+                                        -> if PSE calculation : take 2 or 3;\
+                                        -> if Direct caluculation : take 1;\
+                                        -> if FMM calculation : take 2 or 3
 
-    // FMM and FMMF option and their box size for solution ============ //
-    extern const int ioptfmm;    // = 0 Direct, = 1 FMM
-    extern const int n_s;        // 10 if using fmmo
-    extern const int ndp;        // number of expansion
-    extern const int icutoff;    // 0.singular ;  1.super (high-oder) algebraic  ; 2. Gaussian  ; 3 super Gaussian
-    extern const int iopt_inter; //
-    extern const int par_ext;    // =1(external flow case), =0(internal flow case)
+    // =========================================================== //
+    // ------------------ Data Saving Parameter ------------------ //
+    // =========================================================== //
+    extern const double comtime_sf;     // % Save file frequently after how many [second]=[hour]*60*60, only in case of running is stopped suddenly, but nt_sf take long days
+    extern const int opt_extra_data;    // 1:= not print extra data, print only common data
+                                            // 2:= print common data and extra data at the same time,
+                                            // 3:= print extra data from common data, MUST run case 1/2 first
+    extern const int nt;                // [C] Total iterations number
+    extern const int nt_data;           // [I] Total of data saved
+    extern const int step_inv;          //std::ceil(nt / nt_data);   // [C] Step interval for saving data
+    extern const int nt_sf;             // save data per ( nt_sf ) time step, for saving storage MEMORY and for case of running is stopped suddenly
 
-    // REMESHING, DIFFUSION, SEARCHING, CONVECTION, STRETCHING, LES === //
-    extern const int nrmsh;        // Remeshing every "nrmsh" timestep
-    extern const int opt_remesh_W; // =1 using M4', =2 Using M6, =3 M4 isotropic (Chatelain,P [2005]), =4 P14
-    extern const int par_split;    // 4,5,7,9 only, otherwise just spreading core size
-    extern const int parsplit;     //
-    extern const int xlimit;       // in order to eliminate far field splitting
-    extern const int opt_sptadapt; // = 1 using spatial_adaptation for CSM, =0 withou spatial_adaptation
-    extern const int opt_search;   // =1 using direct searching O(N^2); =2 using link_list O(N)
-    extern const int it_start_les; // if  it_start_les =1, with zero gpx gpy gpz then velocity gradient dudx dudy ... = 0 at it =1, then strain(it =1)=0...=> Cr2 = NaN
-    extern const int diffusion_opt;
+    // ==================================================================== //
+    // ------------------ Structural Vibration Parameter ------------------ //
+    // ==================================================================== //
+    // VIBRATION / STRUCTURAL PROPERTIES : !!STILL IN PROGRESS, RESULTS NOT GOOD ENOUGH!!
+    extern const int vib;           // =0 no vibration simulation, =1 circular cylinder simulation, =2 flow induced pitch oscillations
+    extern double SpringConst;      // Spring constant :: !!INITIALIZATION PARAMETERS DO NOT CHANGE!!
+    extern double DamperConst;      // Damper constant :: !!INITIALIZATION PARAMETERS DO NOT CHANGE!!
+    extern double mass;             //Object mass :: !!INITIALIZATION PARAMETERS DO NOT CHANGE!!
+    extern double inertia;          // Inertia :: !!STILL UNUSED!!
+    //extern double m_d;            // !! rho times volume enclosed !! 
+    extern double m_d;              // !! rho times volume enclosed !! UNUSED, SET TO 0.0 
+    extern double tetha;            //!! ROTATION PARAMETER, STILL BUGGED
+    extern double tetha_dot;        //!! ROTATION PARAMETER, STILL BUGGED
+    extern const double m_star;     // NONDIMENSIONAL MASS
+    extern const double k_star;     // NONDIMENSIONAL SPRING CONST
+    extern const double c_star;     //NONDIMENSIONAL DAMPER CONST
+    extern const double t_star;     //NONDIMENSIONAL TIME VARIABLE
+    extern double gaya;             // !! FORCE INITIALIZATION !!
+    extern double momen;            // !! MOMENT INITIALIZATION !!
+    extern const double chi_star;   //!! ROTATION PARAMETER, STILL BUGGED
+    extern const double i_star;     //!! ROTATION PARAMETER, STILL BUGGED
+    extern const double U_star;     //!! ROTATION PARAMETER, STILL BUGGED
+    extern const double tetha_nol;  //equilibrium angular position of spring [deg] //!! ROTATION PARAMETER, STILL BUGGED
 
-    //VIBRATION PROPERTIES
-    extern const int vib ;// =0 no vibration simulation, =1 vibration simulation
-    extern double SpringConst;  // Spring constant
-    extern double DamperConst; // Damper constant
-    extern double mass; //Object mass
-    extern double m_d; // Shen 2009, rho * (volume that occupied by body); for 2d i think its an area (?)
-    extern double inertia;
-    extern double tetha_dot;
-    extern const double m_star;
-    extern const double k_star;
-    extern const double c_star; 
-    extern const double t_star; 
-    extern const double i_star;
-    extern const double chi_star;
-    extern const double U_star;
-    extern const double tetha_nol;
-    extern double gaya; //Gaya awal
-    extern double tetha;
-    extern double momen;
-
-
-    // namespace geom
-    // {
-    // extern const int edge;
-    // }
 } // namespace Pars
 
 #endif

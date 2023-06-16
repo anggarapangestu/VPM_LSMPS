@@ -1,8 +1,5 @@
 #ifndef INCLUDED_INITIALIZATION
 #define INCLUDED_INITIALIZATION
-#include <fstream>
-#include <string>
-#include <sstream>
 
 #ifndef INCLUDED_UTILS
 #include "../../Utils.hpp"
@@ -11,14 +8,6 @@
 #ifndef INCLUDED_GEOMETRY
 #include "../geometry/geometry.hpp"
 #endif
-
-// #ifndef INCLUDED_NEIGHBOR_BASE
-// #include "../neighbor/base_grid.hpp"
-// #endif
-
-// #ifndef INCLUDED_NEIGHBOR
-// #include "../neighbor/neighbor.hpp"
-// #endif
 
 class initialization
 {
@@ -38,12 +27,8 @@ private:
     void init_domain_3d(Particle &p);
 
 public:
-    // Constructor De-constructor
-    initialization(/* args */);
-    ~initialization();
-    
     // Initialization global procedure
-    void generate(const Body &b, Particle &p);               // [DONE]
-    void continue_simulation(const Body &b, Particle &p, int step);    // [NOT YET]
+    void generate_initial(const Body &b, Particle &p);               // [DONE]
+    void generate_continue(const Body &b, Particle &p, int step);    // [DONE]
 };
 #endif

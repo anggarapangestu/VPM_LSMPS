@@ -96,6 +96,18 @@ public:
 	std::vector<double> boundaryval;
 };
 
+// Additional of the simulation
+class simUtil{
+private:
+	int iterDigitLen;
+public:
+	void startCounter(int step);
+	void printHeader(int step);
+	void predictCompTime(int step, double curr);
+	void saveName(std::string & name, int step);
+	void stabilityEval(const Particle & par, std::vector<double>&max);
+};
+
 // Tambahan untuk hashing 3-d: Ical
 // Need to be deleted
 class Cell

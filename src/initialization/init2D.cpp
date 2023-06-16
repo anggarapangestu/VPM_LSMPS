@@ -35,14 +35,9 @@ void initialization::init_2d_single_res(Particle &par)
     }
     
     // Assign other particle properties
+    par.num = _nparticle;
     par.s.resize(_nparticle, Pars::sigma);
     par.level.resize(_nparticle, Pars::max_level);
-    par.gz.resize(_nparticle, 0.0e0);
-    par.vorticity.resize(_nparticle, 0.0e0);
-    par.u.resize(_nparticle, Pars::u_inf);
-    par.v.resize(_nparticle, Pars::v_inf);
-    par.isActive.resize(_nparticle, false);
-    par.num = _nparticle;
 }
 
 // [DONE] Two level resolution with finer resolution particle in single block distribution
@@ -137,11 +132,6 @@ void initialization::init_2d_multi_res_single_block(const Body &b, Particle &par
     delete bd_pos_max, bd_pos_min;
 
     // Assign other particle properties
-    par.gz.resize(_nparticle, 0.0e0);
-    par.vorticity.resize(_nparticle, 0.0e0);
-    par.u.resize(_nparticle, Pars::u_inf);
-    par.v.resize(_nparticle, Pars::v_inf);
-    par.isActive.resize(_nparticle, false);
     par.num = _nparticle;
 }
 
@@ -403,11 +393,6 @@ void initialization::init_2d_multi_res_body_adjusted(const Body &b, Particle &pa
     delete DnC_x, DnC_y;
 
     // Assign other particle properties
-    par.gz.resize(_nparticle, 0.0e0);
-    par.vorticity.resize(_nparticle, 0.0e0);
-    par.u.resize(_nparticle, Pars::u_inf);
-    par.v.resize(_nparticle, Pars::v_inf);
-    par.isActive.resize(_nparticle, false);
     par.num = _nparticle;
 }
 

@@ -8,15 +8,9 @@ void velocity_biot_savart::biotsavart_direct_2d(Particle &pi, Particle &pj)
 	double rij2, rij, sij, sij2;
 	double gsig;
 
-	ProgressBar progressBar(pi.num, 35, '|', ' ');
-
 	//#pragma omp parallel for
 	for (int i = 1; i <= pi.num; i++)
-	
 	{
-		++progressBar;		   // record the tick
-		progressBar.display(); // display the bar
-
 		for (int j = 1; j <= pj.num; j++)
 		{
 			dx = pi.x[i - 1] - pj.x[j - 1];
@@ -35,5 +29,4 @@ void velocity_biot_savart::biotsavart_direct_2d(Particle &pi, Particle &pj)
 			}
 		}
 	}
-	progressBar.done();
 }

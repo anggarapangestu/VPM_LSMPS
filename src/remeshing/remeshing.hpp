@@ -8,24 +8,6 @@
 #include "../../Utils.hpp"
 #endif
 
-#ifndef INCLUDED_REMESHING_BASE
-#include "base_remeshing.hpp"
-#endif
-
-/*
-#ifndef INCLUDED_PARTICLE_ADAPTION
-#include "particle_adaption/particle_adaption.hpp"
-#endif
-
-#ifndef INCLUDED_MPS
-#include "particle_adaption/mps_adaption.hpp"
-#endif
-
-#ifndef INCLUDED_MULTIBLOCK
-#include "particle_adaption/multiblock_adaption.hpp"
-#endif
-*/
-
 #ifndef INCLUDED_LSMPS
 #include "../LSMPS/LSMPSb.hpp"
 #endif
@@ -37,7 +19,7 @@
 class remeshing
 {
 	// * Internal variables
-	base_remeshing d_base_remeshing; // The method for intersearch
+	// base_remeshing d_base_remeshing; // The method for intersearch
 	std::vector<bool> sign_par;      // sign particles. @param lifetime: singleton
 	Particle particleBase;           // base particle for LSMPS calculation robustness. @param lifetime: singleton
 	neighbor d_neighbor;             // neighbor evaluation and base Cell List
